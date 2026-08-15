@@ -1,49 +1,103 @@
 import Keycloak from "keycloak-js";
 
-const keycloakConfig = {
-    url: "http://152.53.32.66:8089/",
-    realm: "foodcoop",
-    clientId: "foodcoop-pwa"
-}
 
+/**
+ * Keycloak configuration.
+ *
+ * Production / Docker:
+ *
+ *   REACT_APP_KEYCLOAK_URL=/auth/
+ *
+ * Local development can use:
+ *
+ *   REACT_APP_KEYCLOAK_URL=http://localhost:8089/
+ */
+export const keycloakConfig = {
+    url: process.env.REACT_APP_KEYCLOAK_URL || "/auth/",
+    realm: process.env.REACT_APP_KEYCLOAK_REALM || "foodcoop",
+    clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID || "foodcoop-pwa"
+};
+
+
+/**
+ * Shared Keycloak instance.
+ */
 export const keycloak = new Keycloak(keycloakConfig);
 
+
+/**
+ * Kept for compatibility with existing imports in the application.
+ */
 export const keycloakInitConfig = keycloakConfig;
 
+
+/**
+ * Returns all users having the given role.
+ *
+ * IMPORTANT:
+ *
+ * The frontend must NOT use a confidential Keycloak client and must
+ * never contain a client secret.
+ *
+ * Therefore the frontend calls our backend instead. The backend can
+ * then communicate with the Keycloak Admin API securely.
+ *
+ * Expected backend endpoint:
+ *
+ *   GET /keycloak/roles/{roleName}/users
+ *
+ * Browser request:
+ *
+ *   /api/keycloak/roles/{roleName}/users
+ *
+ * nginx forwards /api/... to the backend.
+ */
 export const getUsersOfRole = async (roleName) => {
-    const url = `${keycloakConfig.url}admin/realms/${keycloakConfig.realm}/roles/${roleName}/users`;
-    const tokenEndpoint = `${keycloakConfig.url}realms/${keycloakConfig.realm}/protocol/openid-connect/token`;
+    if (!roleName) {
+        throw new Error("roleName must not be empty");
+    }
 
-    const response1 = await fetch(tokenEndpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-            'grant_type': 'client_credentials',
-            'client_id': 'foodcoop-service',
-            'client_secret': 'NLgKypRN86i3qYakyZLMK9sbPRZQbJYz'
-        })
-    });
+    try {
+        /*
+         * Refresh the user's access token if it expires soon.
+         */
+        await keycloak.updateToken(30);
 
-    if (response1.ok) {
-        const data = await response1.json();
-        const token = data.access_token;
+        if (!keycloak.token) {
+            console.error("No Keycloak access token available");
+            return null;
+        }
 
-        const response2 = await fetch(url, {
-            method: 'GET',
+        const url =
+            `/api/keycloak/roles/${encodeURIComponent(roleName)}/users`;
+
+        const response = await fetch(url, {
+            method: "GET",
+
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                "Authorization": `Bearer ${keycloak.token}`,
+                "Content-Type": "application/json"
             }
         });
 
-        if (response2.ok) {
-            const usersOfRole = await response2.json();
-            return usersOfRole;
-        } else {
-            console.error('Error fetching users of role:', response2.status);
+        if (!response.ok) {
+            console.error(
+                "Error fetching users of role:",
+                response.status,
+                response.statusText
+            );
+
             return null;
         }
+
+        return await response.json();
+
+    } catch (error) {
+        console.error(
+            "Error fetching users of role:",
+            error
+        );
+
+        return null;
     }
 };

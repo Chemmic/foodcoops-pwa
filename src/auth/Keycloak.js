@@ -12,23 +12,17 @@ import Keycloak from "keycloak-js";
  *
  *   REACT_APP_KEYCLOAK_URL=http://localhost:8089/
  */
+
 export const keycloakConfig = {
     url: process.env.REACT_APP_KEYCLOAK_URL || "/auth/",
     realm: process.env.REACT_APP_KEYCLOAK_REALM || "foodcoop",
-    clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID || "foodcoop-pwa"
+    clientId:
+        process.env.REACT_APP_KEYCLOAK_CLIENT_ID ||
+        "foodcoop-pwa"
 };
 
 
-/**
- * Shared Keycloak instance.
- */
 export const keycloak = new Keycloak(keycloakConfig);
-
-
-/**
- * Kept for compatibility with existing imports in the application.
- */
-export const keycloakInitConfig = keycloakConfig;
 
 
 /**

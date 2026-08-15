@@ -5,11 +5,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Alert from '@mui/material/Alert';
 import { useApi } from '../ApiService';
-import {useKeycloak} from "@react-keycloak/web";
 import { BrotTable } from './BrotTable';
 import { deepAssign } from '../util';
 import { DeadlineLogic } from '../deadline/DeadlineLogic';
 import NumberFormatComponent from '../logic/NumberFormatComponent';
+import {useAuth} from "../auth/AuthContext";
 
 export function Brot(){
     const columns = React.useMemo(
@@ -54,7 +54,7 @@ export function Brot(){
     const [brotBestellungSumme, setBrotBestellungSumme] = React.useState([]);
 
     const api = useApi();
-    const {keycloak} = useKeycloak();
+    const { keycloak } = useAuth();
 
     React.useEffect(
         () => {

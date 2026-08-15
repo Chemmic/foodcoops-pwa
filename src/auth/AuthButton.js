@@ -1,9 +1,10 @@
 import React from 'react';
 import { Typography } from "@mui/material";
-import { useKeycloak } from "@react-keycloak/web";
+
+import {useAuth} from "./AuthContext";
 
 export const AuthButton = ({ width = 'auto', height = "auto", backgroundColor="#333", color="white" }) => {
-    const { keycloak } = useKeycloak();
+    const { keycloak } = useAuth();
 
     const handleLoginClick = () => {
         if (!keycloak.authenticated) {

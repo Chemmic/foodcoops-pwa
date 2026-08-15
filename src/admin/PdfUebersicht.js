@@ -3,7 +3,7 @@ import { useApi } from '../ApiService';
 import Button from 'react-bootstrap/Button';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useKeycloak } from "@react-keycloak/web";
+import { useAuth } from "../auth/AuthContext";
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 
 export function PdfUebersicht() {
     const api = useApi();
-    const { keycloak } = useKeycloak();
+    const { keycloak } = useAuth();
 
     const handleDownloadFrisch = () => {
         api.getUebersichtFrischByte()

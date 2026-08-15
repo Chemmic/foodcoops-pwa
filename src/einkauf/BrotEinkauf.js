@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../ApiService';
-import { useKeycloak } from "@react-keycloak/web";
 import BTable from "react-bootstrap/Table";
 import { useTable, useSortBy } from 'react-table';
 import NumberFormatComponent from '../logic/NumberFormatComponent';
 import '../Table.css';
+import {useAuth} from "../auth/AuthContext";
 
 export function BrotEinkauf(props) {
     const [brotBestellung, setBrotBestellung] = useState([]);
     const api = useApi();
-    const { keycloak } = useKeycloak();
+    const { keycloak } = useAuth();
     const [totalBrotPrice, setTotalBrotPrice] = useState(0);
     const NotAvailableColor = '#D3D3D3';
 

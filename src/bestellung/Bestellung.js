@@ -7,9 +7,9 @@ import Alert from '@mui/material/Alert';
 import {BestellungTable} from "./BestellungTable";
 import {deepAssign} from '../util'
 import {useApi} from '../ApiService';
-import {useKeycloak} from "@react-keycloak/web";
 import { DeadlineLogic } from '../deadline/DeadlineLogic';
 import NumberFormatComponent from '../logic/NumberFormatComponent';
+import {useAuth} from "../auth/AuthContext";
 
 export function Bestellung(){
     const columns = React.useMemo(
@@ -75,7 +75,7 @@ export function Bestellung(){
     const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
     const api = useApi();
-    const {keycloak} = useKeycloak();
+    const { keycloak } = useAuth();
 
     React.useEffect(
         () => {

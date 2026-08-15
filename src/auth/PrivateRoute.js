@@ -1,10 +1,10 @@
 import React from "react";
 import {Redirect, Route} from "react-router-dom";
-import {useKeycloak} from "@react-keycloak/web";
+import { useAuth } from "./AuthContext";
 
 export function PrivateRoute({component: Component, roles, ...rest}) {
-    const { keycloak, initialized } = useKeycloak();
 
+    const { keycloak, initialized } = useAuth();
     if (!initialized) {
         return <div>Lädt...</div>;
     }

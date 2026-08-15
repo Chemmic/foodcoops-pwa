@@ -14,7 +14,7 @@ import {EditEinheitenModal} from "./EditEinheitenModal";
 import NumberFormatComponent from '../logic/NumberFormatComponent';
 import {jsPDF} from "jspdf";
 import autoTable from 'jspdf-autotable';
-import { useKeycloak } from "@react-keycloak/web";
+import {useAuth} from "../auth/AuthContext";
 
 export function Lager() {
 
@@ -59,7 +59,7 @@ export function Lager() {
     const [reducerValue, forceUpdate] = React.useReducer(x => x+1, 0);
 
     const api = useApi();
-    const { keycloak } = useKeycloak();
+    const { keycloak } = useAuth();
 
     React.useEffect(
         () => {

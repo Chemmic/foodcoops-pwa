@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useKeycloak } from "@react-keycloak/web";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Button from 'react-bootstrap/Button';
@@ -16,6 +15,7 @@ import { useApi } from '../ApiService';
 import { getUsersOfRole } from "../auth/Keycloak";
 import NumberFormatComponent from '../logic/NumberFormatComponent';
 import './MainEinkauf.css';
+import {useAuth} from "../auth/AuthContext";
 
 export function MainEinkauf( { isLarge }) {
   const [totalFrischPrice, setTotalFrischPrice] = useState(0);
@@ -28,7 +28,7 @@ export function MainEinkauf( { isLarge }) {
   const [discrepancy, setDiscrepancy] = useState([]);
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
-  const { keycloak } = useKeycloak();
+  const { keycloak } = useAuth();
   const api = useApi();
   const [deliveryCostPercentage, setDeliveryCostPercentage] = useState(0);
   const [forceUpdate, setForceUpdate] = React.useReducer(x => x+1, 0);

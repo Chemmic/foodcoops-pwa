@@ -1,10 +1,10 @@
 import "./App.css";
 import { AuthButton } from "./auth/AuthButton";
-import { useKeycloak } from "@react-keycloak/web";
+import { useAuth } from "./auth/AuthContext";
 import { Typography } from "@mui/material";
 
 export function Home() {
-    const { keycloak } = useKeycloak();
+    const { keycloak } = useAuth();
 
     return (
         <main className="App-header">

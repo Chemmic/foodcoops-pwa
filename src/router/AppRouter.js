@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Link, Route, Switch, useLocation } from 'react-router-dom';
-import { useKeycloak } from "@react-keycloak/web";
+
 import { AuthButton } from '../auth/AuthButton';
 import { About } from '../About';
 import { MainBestellung } from '../bestellung/MainBestellung';
@@ -28,6 +28,7 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import './AppRouter.css';
 import { MainAdmin } from '../admin/MainAdmin';
+import {useAuth} from "../auth/AuthContext";
 
 export const AppRouter = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +46,7 @@ export const AppRouter = () => {
 
 const AppContent = ({ menuOpen, toggleMenu }) => {
   const location = useLocation();
-  const { keycloak } = useKeycloak();
+  const { keycloak } = useAuth();
   const [isLarge, setIsLarge] = useState(false);
 
   const toggleSize = () => {

@@ -21,13 +21,9 @@ export const AuthProvider = ({ children }) => {
             try {
                 const isAuthenticated = await keycloak.init({
                     onLoad: "check-sso",
-
-                    silentCheckSsoRedirectUri:
-                        `${window.location.origin}/silent-check-sso.html`,
-
                     checkLoginIframe: false,
-
-                    pkceMethod: "S256"
+                    pkceMethod: "S256",
+                    enableLogging: true
                 });
                 console.log(
                     "[Keycloak] initialized, authenticated:",

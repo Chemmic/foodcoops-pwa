@@ -112,6 +112,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider
             value={{
                 keycloak,
+                initialized,
                 authenticated,
                 login,
                 logout

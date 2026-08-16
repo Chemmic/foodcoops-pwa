@@ -1,67 +1,42 @@
 import React, { useEffect } from "react";
-import { Redirect, Route } from "react-router-dom";
+import { Route, useHistory } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
-export function PrivateRoute({ component: Component, roles, ...rest }) {
 
-    const { keycloak, initialized, authenticated } = useAuth();
+function UnauthorizedRedirect({ roles }) {
 
-    const isAuthorized = () => {
+    const history = useHistory();
 
-        if (!authenticated || !keycloak) {
-            return false;
-        }
-
-        // Wenn keine Rollen für die Route definiert sind,
-        // reicht ein angemeldeter Benutzer.
-        if (!roles || roles.length === 0) {
-            return true;
-        }
-
-        return roles.some(role => {
-            const realmRole = keycloak.hasRealmRole(role);
-            const resourceRole = keycloak.hasResourceRole(role);
-
-            return realmRole || resourceRole;
-        });
-    };
-
-    const authorized = initialized && isAuthorized();
-
+    const roleText =
+        roles && roles.length > 0
+            ? roles.join(" oder ")
+            : "unbekannt";
 
     useEffect(() => {
-
-        // Noch nicht initialisiert -> keinen Toast anzeigen
-        if (!initialized) {
-            return;
-        }
-
-        // Nicht eingeloggt -> hier keinen Rollen-Toast anzeigen
-        if (!authenticated) {
-            return;
-        }
-
-        // Keine Rollen erforderlich
-        if (!roles || roles.length === 0) {
-            return;
-        }
-
-        // Benutzer hat die benötigte Rolle
-        if (authorized) {
-            return;
-        }
-
-        const roleText = roles.join(" oder ");
 
         toast.warning(
             `Keine Berechtigung. Benötigte Rolle: ${roleText}`,
             {
-                toastId: `missing-role-${roles.join("-")}`
+                toastId: `missing-role-${roleText}`
             }
         );
 
-    }, [initialized, authenticated, authorized, roles]);
+        history.replace("/");
+
+    }, [history, roleText]);
+
+    return null;
+}
+
+
+export function PrivateRoute({ component: Component, roles, ...rest }) {
+
+    const {
+        keycloak,
+        initialized,
+        authenticated
+    } = useAuth();
 
 
     if (!initialized) {
@@ -69,14 +44,33 @@ export function PrivateRoute({ component: Component, roles, ...rest }) {
     }
 
 
+    const isAuthorized = () => {
+
+        if (!authenticated || !keycloak) {
+            return false;
+        }
+
+        if (!roles || roles.length === 0) {
+            return true;
+        }
+
+        return roles.some(role => {
+            return (
+                keycloak.hasRealmRole(role) ||
+                keycloak.hasResourceRole(role)
+            );
+        });
+    };
+
+
     return (
         <Route
             {...rest}
             render={props =>
-                authorized ? (
+                isAuthorized() ? (
                     <Component {...props} />
                 ) : (
-                    <Redirect to="/" />
+                    <UnauthorizedRedirect roles={roles} />
                 )
             }
         />

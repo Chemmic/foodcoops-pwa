@@ -28,7 +28,7 @@ ENV VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID}
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm install
 
 
 # -----------------------------------------------------------------------------

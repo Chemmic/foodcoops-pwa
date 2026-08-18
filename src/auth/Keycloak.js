@@ -2,96 +2,194 @@ import Keycloak from "keycloak-js";
 
 
 /**
- * Keycloak configuration.
+ * ============================================================================
+ * Keycloak Configuration
+ * ============================================================================
  *
  * Production / Docker:
  *
- *   REACT_APP_KEYCLOAK_URL=/auth/
+ * VITE_KEYCLOAK_URL=/auth/
  *
- * Local development can use:
+ * Local development:
  *
- *   REACT_APP_KEYCLOAK_URL=http://localhost:8089/
+ * VITE_KEYCLOAK_URL=http://localhost:8089/
+ *
+ * Optional:
+ *
+ * VITE_KEYCLOAK_REALM=foodcoop
+ * VITE_KEYCLOAK_CLIENT_ID=foodcoop-pwa
+ *
+ * WICHTIG:
+ *
+ * Niemals ein Keycloak Client Secret als VITE_* Variable
+ * in das Frontend schreiben.
+ *
+ * VITE_* Werte werden Bestandteil des Browser-Bundles
+ * und sind damit für Benutzer einsehbar.
  */
 
 export const keycloakConfig = {
-    url: process.env.REACT_APP_KEYCLOAK_URL || "/auth/",
-    realm: process.env.REACT_APP_KEYCLOAK_REALM || "foodcoop",
+    url:
+        import.meta.env
+            .VITE_KEYCLOAK_URL ||
+        "/auth/",
+
+    realm:
+        import.meta.env
+            .VITE_KEYCLOAK_REALM ||
+        "foodcoop",
+
     clientId:
-        process.env.REACT_APP_KEYCLOAK_CLIENT_ID ||
-        "foodcoop-pwa"
+        import.meta.env
+            .VITE_KEYCLOAK_CLIENT_ID ||
+        "foodcoop-pwa",
 };
 
 
-export const keycloak = new Keycloak(keycloakConfig);
+export const keycloak =
+    new Keycloak(
+        keycloakConfig
+    );
 
 
 /**
- * Returns all users having the given role.
- *
- * IMPORTANT:
- *
- * The frontend must NOT use a confidential Keycloak client and must
- * never contain a client secret.
- *
- * Therefore the frontend calls our backend instead. The backend can
- * then communicate with the Keycloak Admin API securely.
- *
- * Expected backend endpoint:
- *
- *   GET /keycloak/roles/{roleName}/users
- *
- * Browser request:
- *
- *   /api/keycloak/roles/{roleName}/users
- *
- * nginx forwards /api/... to the backend.
+ * ============================================================================
+ * Token
+ * ============================================================================
  */
-export const getUsersOfRole = async (roleName) => {
-    if (!roleName) {
-        throw new Error("roleName must not be empty");
+
+/**
+ * Liefert ein gültiges Access Token.
+ *
+ * Falls das Token innerhalb der nächsten 30 Sekunden
+ * abläuft, wird es vorher aktualisiert.
+ */
+export async function getAccessToken() {
+    if (!keycloak.authenticated) {
+        return null;
     }
 
+
     try {
-        /*
-         * Refresh the user's access token if it expires soon.
-         */
-        await keycloak.updateToken(30);
-
-        if (!keycloak.token) {
-            console.error("No Keycloak access token available");
-            return null;
-        }
-
-        const url =
-            `/api/keycloak/roles/${encodeURIComponent(roleName)}/users`;
-
-        const response = await fetch(url, {
-            method: "GET",
-
-            headers: {
-                "Authorization": `Bearer ${keycloak.token}`,
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (!response.ok) {
-            console.error(
-                "Error fetching users of role:",
-                response.status,
-                response.statusText
-            );
-
-            return null;
-        }
-
-        return await response.json();
-
+        await keycloak.updateToken(
+            30
+        );
     } catch (error) {
         console.error(
-            "Error fetching users of role:",
+            "[Keycloak] Token konnte nicht aktualisiert werden:",
             error
         );
 
         return null;
     }
-};
+
+
+    return keycloak.token ??
+        null;
+}
+
+
+/**
+ * ============================================================================
+ * Users by Role
+ * ============================================================================
+ *
+ * Das Frontend darf keinen vertraulichen Keycloak Client
+ * und insbesondere kein Client Secret enthalten.
+ *
+ * Daher wird die Keycloak Admin API nicht direkt aus dem
+ * Browser aufgerufen.
+ *
+ * Stattdessen:
+ *
+ * Browser:
+ *
+ * GET /api/keycloak/roles/{roleName}/users
+ *
+ * nginx:
+ *
+ * /api/... -> Backend
+ *
+ * Backend:
+ *
+ * Backend -> Keycloak Admin API
+ */
+
+export const getUsersOfRole =
+    async roleName => {
+        if (
+            !roleName ||
+            typeof roleName !==
+                "string" ||
+            !roleName.trim()
+        ) {
+            throw new Error(
+                "roleName must not be empty"
+            );
+        }
+
+
+        const token =
+            await getAccessToken();
+
+
+        if (!token) {
+            console.error(
+                "[Keycloak] Kein gültiges Access Token verfügbar."
+            );
+
+            return [];
+        }
+
+
+        const url =
+            `/api/keycloak/roles/${encodeURIComponent(
+                roleName.trim()
+            )}/users`;
+
+
+        try {
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`,
+
+                            Accept:
+                                "application/json",
+                        },
+                    }
+                );
+
+
+            if (!response.ok) {
+                console.error(
+                    "[Keycloak] Benutzer der Rolle konnten nicht geladen werden:",
+                    response.status,
+                    response.statusText
+                );
+
+                return [];
+            }
+
+
+            const data =
+                await response.json();
+
+
+            return Array.isArray(data)
+                ? data
+                : [];
+        } catch (error) {
+            console.error(
+                "[Keycloak] Fehler beim Laden der Benutzer einer Rolle:",
+                error
+            );
+
+            return [];
+        }
+    };

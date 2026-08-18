@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:16 as build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 ARG REACT_APP_NAME

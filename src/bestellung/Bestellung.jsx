@@ -920,14 +920,6 @@ export function Bestellung() {
                     // =========================================================
                     // Bestellung
                     // =========================================================
-                    //
-                    // done setzen wir hier ausdrücklich auf false.
-                    //
-                    // Falls das neue Spring-Modell dort ein primitives
-                    // boolean verwendet, kann damit ebenfalls niemals null
-                    // entstehen.
-                    //
-                    // =========================================================
 
                     const order = {
                         personId,

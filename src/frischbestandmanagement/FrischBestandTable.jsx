@@ -17,6 +17,8 @@ import {
     TableHead,
     TableRow,
     TableSortLabel,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 
 
@@ -35,6 +37,22 @@ export function FrischBestandTable({
     ] =
         React.useState(
             []
+        );
+
+
+    // =========================================================================
+    // Responsive
+    // =========================================================================
+
+    const theme =
+        useTheme();
+
+
+    const isSmallScreen =
+        useMediaQuery(
+            theme.breakpoints.down(
+                "sm"
+            )
         );
 
 
@@ -95,15 +113,13 @@ export function FrischBestandTable({
 
     return (
         <TableContainer
-            component={Paper}
-            elevation={0}
+            component={
+                Paper
+            }
+            elevation={
+                0
+            }
             sx={{
-                /*
-                 * Genau wie Lager:
-                 *
-                 * Der Parent gibt die verfügbare Resthöhe vor.
-                 * Der TableContainer nimmt diese vollständig ein.
-                 */
                 flex:
                     1,
 
@@ -125,14 +141,14 @@ export function FrischBestandTable({
                 borderRadius:
                     2,
 
-                /*
-                 * Ausschließlich hier wird gescrollt.
-                 */
                 overflow:
                     "auto",
 
                 overscrollBehavior:
                     "contain",
+
+                WebkitOverflowScrolling:
+                    "touch",
             }}
         >
             <Table
@@ -143,10 +159,6 @@ export function FrischBestandTable({
                     width:
                         "100%",
 
-                    /*
-                     * Wegen der vielen Spalten darf die Tabelle
-                     * horizontal breiter als der Viewport sein.
-                     */
                     minWidth:
                         1050,
 
@@ -176,11 +188,23 @@ export function FrischBestandTable({
                                     {headerGroup.headers.map(
                                         header => {
                                             const sorted =
-                                                header.column.getIsSorted();
+                                                header
+                                                    .column
+                                                    .getIsSorted();
 
 
                                             const sortable =
-                                                header.column.getCanSort();
+                                                header
+                                                    .column
+                                                    .getCanSort();
+
+
+                                            const stickyProduct =
+                                                isSmallScreen &&
+                                                header
+                                                    .column
+                                                    .id ===
+                                                    "name";
 
 
                                             return (
@@ -205,7 +229,31 @@ export function FrischBestandTable({
                                                             "background.paper",
 
                                                         zIndex:
-                                                            2,
+                                                            stickyProduct
+                                                                ? 4
+                                                                : 2,
+
+                                                        ...(stickyProduct
+                                                            ? {
+                                                                position:
+                                                                    "sticky",
+
+                                                                left:
+                                                                    0,
+
+                                                                minWidth:
+                                                                    150,
+
+                                                                maxWidth:
+                                                                    150,
+
+                                                                borderRight:
+                                                                    1,
+
+                                                                borderRightColor:
+                                                                    "divider",
+                                                            }
+                                                            : {}),
                                                     }}
                                                 >
                                                     {header.isPlaceholder
@@ -225,7 +273,9 @@ export function FrischBestandTable({
                                                                             : "asc"
                                                                     }
                                                                     onClick={
-                                                                        header.column.getToggleSortingHandler()
+                                                                        header
+                                                                            .column
+                                                                            .getToggleSortingHandler()
                                                                     }
                                                                 >
                                                                     {flexRender(
@@ -234,7 +284,8 @@ export function FrischBestandTable({
                                                                             .columnDef
                                                                             .header,
 
-                                                                        header.getContext()
+                                                                        header
+                                                                            .getContext()
                                                                     )}
                                                                 </TableSortLabel>
                                                             )
@@ -245,7 +296,8 @@ export function FrischBestandTable({
                                                                         .columnDef
                                                                         .header,
 
-                                                                    header.getContext()
+                                                                    header
+                                                                        .getContext()
                                                                 )
                                                             )}
                                                 </TableCell>
@@ -283,11 +335,10 @@ export function FrischBestandTable({
                                         cursor:
                                             "pointer",
 
-                                        "&:last-child td":
-                                            {
-                                                borderBottom:
-                                                    0,
-                                            },
+                                        "&:last-child td": {
+                                            borderBottom:
+                                                0,
+                                        },
                                     }}
                                 >
                                     {row
@@ -295,11 +346,14 @@ export function FrischBestandTable({
                                         .map(
                                             cell => {
                                                 const columnId =
-                                                    cell.column.id;
+                                                    cell
+                                                        .column
+                                                        .id;
 
 
                                                 const value =
-                                                    cell.getValue();
+                                                    cell
+                                                        .getValue();
 
 
                                                 const booleanColumn =
@@ -309,11 +363,46 @@ export function FrischBestandTable({
                                                         "spezialfallBestelleinheit";
 
 
+                                                const stickyProduct =
+                                                    isSmallScreen &&
+                                                    columnId ===
+                                                        "name";
+
+
                                                 return (
                                                     <TableCell
                                                         key={
                                                             cell.id
                                                         }
+                                                        sx={{
+                                                            ...(stickyProduct
+                                                                ? {
+                                                                    position:
+                                                                        "sticky",
+
+                                                                    left:
+                                                                        0,
+
+                                                                    zIndex:
+                                                                        1,
+
+                                                                    minWidth:
+                                                                        150,
+
+                                                                    maxWidth:
+                                                                        150,
+
+                                                                    bgcolor:
+                                                                        "background.paper",
+
+                                                                    borderRight:
+                                                                        1,
+
+                                                                    borderRightColor:
+                                                                        "divider",
+                                                                }
+                                                                : {}),
+                                                        }}
                                                     >
                                                         {booleanColumn
                                                             ? renderBoolean(
@@ -327,7 +416,8 @@ export function FrischBestandTable({
                                                                     .columnDef
                                                                     .cell,
 
-                                                                cell.getContext()
+                                                                cell
+                                                                    .getContext()
                                                             )}
                                                     </TableCell>
                                                 );

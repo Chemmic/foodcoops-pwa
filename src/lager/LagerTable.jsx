@@ -20,6 +20,8 @@ import {
     TableRow,
     TableSortLabel,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 
 
@@ -42,6 +44,22 @@ export function LagerTable({
 
 
     // =========================================================================
+    // Responsive
+    // =========================================================================
+
+    const theme =
+        useTheme();
+
+
+    const isSmallScreen =
+        useMediaQuery(
+            theme.breakpoints.down(
+                "sm"
+            )
+        );
+
+
+    // =========================================================================
     // Table
     // =========================================================================
 
@@ -53,10 +71,6 @@ export function LagerTable({
             state: {
                 sorting,
 
-                /*
-                 * Kategorien mit enthaltenen Produkten
-                 * standardmäßig aufgeklappt.
-                 */
                 expanded:
                     true,
             },
@@ -94,10 +108,12 @@ export function LagerTable({
 
 
             if (
-                Object.prototype.hasOwnProperty.call(
-                    rowData,
-                    "produkte"
-                )
+                Object.prototype
+                    .hasOwnProperty
+                    .call(
+                        rowData,
+                        "produkte"
+                    )
             ) {
                 dispatchModal(
                     "EditKategorieModal",
@@ -128,12 +144,6 @@ export function LagerTable({
                 0
             }
             sx={{
-                /*
-                 * GANZ wichtig:
-                 *
-                 * Kein maxHeight mit viewport-Berechnung.
-                 * Der Parent hat jetzt die korrekte Resthöhe.
-                 */
                 flex:
                     1,
 
@@ -155,18 +165,14 @@ export function LagerTable({
                 borderRadius:
                     2,
 
-                /*
-                 * Genau HIER wird gescrollt.
-                 */
                 overflow:
                     "auto",
 
-                /*
-                 * Der native Scrollbar bleibt innerhalb
-                 * des Tabellenbereichs.
-                 */
                 overscrollBehavior:
                     "contain",
+
+                WebkitOverflowScrolling:
+                    "touch",
             }}
         >
             <Table
@@ -177,15 +183,14 @@ export function LagerTable({
                     width:
                         "100%",
 
-                    minWidth:
-                        780,
+                    minWidth: {
+                        xs:
+                            780,
 
-                    /*
-                     * Die Tabelle selbst darf länger als
-                     * der Container werden.
-                     *
-                     * TableContainer übernimmt das Scrollen.
-                     */
+                        sm:
+                            780,
+                    },
+
                     "& td, & th": {
                         whiteSpace:
                             "normal",
@@ -212,11 +217,23 @@ export function LagerTable({
                                     {headerGroup.headers.map(
                                         header => {
                                             const sorted =
-                                                header.column.getIsSorted();
+                                                header
+                                                    .column
+                                                    .getIsSorted();
 
 
                                             const sortable =
-                                                header.column.getCanSort();
+                                                header
+                                                    .column
+                                                    .getCanSort();
+
+
+                                            const stickyName =
+                                                isSmallScreen &&
+                                                header
+                                                    .column
+                                                    .id ===
+                                                    "name";
 
 
                                             return (
@@ -240,13 +257,32 @@ export function LagerTable({
                                                         bgcolor:
                                                             "background.paper",
 
-                                                        /*
-                                                         * Sticky Header soll
-                                                         * sauber über den
-                                                         * Tabellenzeilen liegen.
-                                                         */
                                                         zIndex:
-                                                            2,
+                                                            stickyName
+                                                                ? 4
+                                                                : 2,
+
+                                                        ...(stickyName
+                                                            ? {
+                                                                position:
+                                                                    "sticky",
+
+                                                                left:
+                                                                    0,
+
+                                                                minWidth:
+                                                                    160,
+
+                                                                maxWidth:
+                                                                    160,
+
+                                                                borderRight:
+                                                                    1,
+
+                                                                borderRightColor:
+                                                                    "divider",
+                                                            }
+                                                            : {}),
                                                     }}
                                                 >
                                                     {header.isPlaceholder
@@ -266,7 +302,9 @@ export function LagerTable({
                                                                             : "asc"
                                                                     }
                                                                     onClick={
-                                                                        header.column.getToggleSortingHandler()
+                                                                        header
+                                                                            .column
+                                                                            .getToggleSortingHandler()
                                                                     }
                                                                 >
                                                                     {flexRender(
@@ -275,7 +313,8 @@ export function LagerTable({
                                                                             .columnDef
                                                                             .header,
 
-                                                                        header.getContext()
+                                                                        header
+                                                                            .getContext()
                                                                     )}
                                                                 </TableSortLabel>
                                                             )
@@ -286,7 +325,8 @@ export function LagerTable({
                                                                         .columnDef
                                                                         .header,
 
-                                                                    header.getContext()
+                                                                    header
+                                                                        .getContext()
                                                                 )
                                                             )}
                                                 </TableCell>
@@ -310,10 +350,12 @@ export function LagerTable({
                         .map(
                             row => {
                                 const isCategory =
-                                    Object.prototype.hasOwnProperty.call(
-                                        row.original,
-                                        "produkte"
-                                    );
+                                    Object.prototype
+                                        .hasOwnProperty
+                                        .call(
+                                            row.original,
+                                            "produkte"
+                                        );
 
 
                                 // -------------------------------------------------
@@ -348,6 +390,13 @@ export function LagerTable({
                                                 colSpan={
                                                     columns.length
                                                 }
+                                                sx={{
+                                                    position:
+                                                        "relative",
+
+                                                    left:
+                                                        0,
+                                                }}
                                             >
                                                 <Box
                                                     sx={{
@@ -426,22 +475,62 @@ export function LagerTable({
                                         {row
                                             .getVisibleCells()
                                             .map(
-                                                cell => (
-                                                    <TableCell
-                                                        key={
-                                                            cell.id
-                                                        }
-                                                    >
-                                                        {flexRender(
-                                                            cell
-                                                                .column
-                                                                .columnDef
-                                                                .cell,
+                                                cell => {
+                                                    const stickyName =
+                                                        isSmallScreen &&
+                                                        cell
+                                                            .column
+                                                            .id ===
+                                                            "name";
 
-                                                            cell.getContext()
-                                                        )}
-                                                    </TableCell>
-                                                )
+
+                                                    return (
+                                                        <TableCell
+                                                            key={
+                                                                cell.id
+                                                            }
+                                                            sx={{
+                                                                ...(stickyName
+                                                                    ? {
+                                                                        position:
+                                                                            "sticky",
+
+                                                                        left:
+                                                                            0,
+
+                                                                        zIndex:
+                                                                            1,
+
+                                                                        minWidth:
+                                                                            160,
+
+                                                                        maxWidth:
+                                                                            160,
+
+                                                                        bgcolor:
+                                                                            "background.paper",
+
+                                                                        borderRight:
+                                                                            1,
+
+                                                                        borderRightColor:
+                                                                            "divider",
+                                                                    }
+                                                                    : {}),
+                                                            }}
+                                                        >
+                                                            {flexRender(
+                                                                cell
+                                                                    .column
+                                                                    .columnDef
+                                                                    .cell,
+
+                                                                cell
+                                                                    .getContext()
+                                                            )}
+                                                        </TableCell>
+                                                    );
+                                                }
                                             )}
                                     </TableRow>
                                 );

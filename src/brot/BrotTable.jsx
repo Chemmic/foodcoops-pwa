@@ -23,6 +23,8 @@ import {
     TextField,
     Tooltip,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 
 import HelpOutlinedIcon
@@ -44,6 +46,22 @@ export function BrotTable({
         setSorting,
     ] =
         React.useState([]);
+
+
+    // =========================================================================
+    // Responsive
+    // =========================================================================
+
+    const theme =
+        useTheme();
+
+
+    const isSmallScreen =
+        useMediaQuery(
+            theme.breakpoints.down(
+                "sm"
+            )
+        );
 
 
     // =========================================================================
@@ -159,9 +177,13 @@ export function BrotTable({
 
     return (
         <Stack
-            spacing={
-                1.5
-            }
+            spacing={{
+                xs:
+                    0.75,
+
+                sm:
+                    1.5,
+            }}
             sx={{
                 flex:
                     1,
@@ -173,16 +195,27 @@ export function BrotTable({
                     "hidden",
             }}
         >
+            {/* ============================================================= */}
+            {/* Vorwoche                                                      */}
+            {/* ============================================================= */}
+
             <Stack
                 direction="row"
                 spacing={
                     1
                 }
-                justifyContent="flex-end"
                 alignItems="center"
                 sx={{
                     flexShrink:
                         0,
+
+                    justifyContent: {
+                        xs:
+                            "space-between",
+
+                        sm:
+                            "flex-end",
+                    },
                 }}
             >
                 <Tooltip
@@ -207,7 +240,13 @@ export function BrotTable({
                         </Box>
                     }
                 >
-                    <IconButton>
+                    <IconButton
+                        size={
+                            isSmallScreen
+                                ? "small"
+                                : "medium"
+                        }
+                    >
                         <HelpOutlinedIcon />
                     </IconButton>
                 </Tooltip>
@@ -215,17 +254,34 @@ export function BrotTable({
 
                 <Button
                     variant="outlined"
+                    size={
+                        isSmallScreen
+                            ? "small"
+                            : "medium"
+                    }
                     startIcon={
                         <HistoryOutlinedIcon />
                     }
                     onClick={
                         loadPreviousWeek
                     }
+                    sx={{
+                        whiteSpace:
+                            "nowrap",
+                    }}
                 >
-                    Bestellmenge Vorwoche laden
+                    {
+                        isSmallScreen
+                            ? "Vorwoche laden"
+                            : "Bestellmenge Vorwoche laden"
+                    }
                 </Button>
             </Stack>
 
+
+            {/* ============================================================= */}
+            {/* Tabelle                                                       */}
+            {/* ============================================================= */}
 
             <TableContainer
                 component={
@@ -255,6 +311,9 @@ export function BrotTable({
 
                     overflow:
                         "auto",
+
+                    WebkitOverflowScrolling:
+                        "touch",
                 }}
             >
                 <Table
@@ -266,6 +325,10 @@ export function BrotTable({
                             800,
                     }}
                 >
+                    {/* ===================================================== */}
+                    {/* Header                                                */}
+                    {/* ===================================================== */}
+
                     <TableHead>
                         {table
                             .getHeaderGroups()
@@ -279,8 +342,17 @@ export function BrotTable({
                                         {headerGroup.headers.map(
                                             header => {
                                                 const sorted =
-                                                    header.column
+                                                    header
+                                                        .column
                                                         .getIsSorted();
+
+
+                                                const stickyBreadName =
+                                                    isSmallScreen &&
+                                                    header
+                                                        .column
+                                                        .id ===
+                                                        "name";
 
 
                                                 return (
@@ -294,9 +366,29 @@ export function BrotTable({
 
                                                             bgcolor:
                                                                 "background.paper",
+
+                                                            ...(stickyBreadName
+                                                                ? {
+                                                                    position:
+                                                                        "sticky",
+
+                                                                    left:
+                                                                        0,
+
+                                                                    zIndex:
+                                                                        4,
+
+                                                                    borderRight:
+                                                                        1,
+
+                                                                    borderRightColor:
+                                                                        "divider",
+                                                                }
+                                                                : {}),
                                                         }}
                                                     >
-                                                        {header.column
+                                                        {header
+                                                            .column
                                                             .getCanSort() ? (
                                                             <TableSortLabel
                                                                 active={
@@ -311,7 +403,8 @@ export function BrotTable({
                                                                         : "asc"
                                                                 }
                                                                 onClick={
-                                                                    header.column
+                                                                    header
+                                                                        .column
                                                                         .getToggleSortingHandler()
                                                                 }
                                                             >
@@ -346,6 +439,10 @@ export function BrotTable({
                     </TableHead>
 
 
+                    {/* ===================================================== */}
+                    {/* Body                                                  */}
+                    {/* ===================================================== */}
+
                     <TableBody>
                         {table
                             .getRowModel()
@@ -378,6 +475,18 @@ export function BrotTable({
                                                 .getVisibleCells()
                                                 .map(
                                                     cell => {
+                                                        const stickyBreadName =
+                                                            isSmallScreen &&
+                                                            cell
+                                                                .column
+                                                                .id ===
+                                                                "name";
+
+
+                                                        // =================================================
+                                                        // Bestellmenge
+                                                        // =================================================
+
                                                         if (
                                                             cell
                                                                 .column
@@ -441,11 +550,38 @@ export function BrotTable({
                                                         }
 
 
+                                                        // =================================================
+                                                        // Normale Zelle
+                                                        // =================================================
+
                                                         return (
                                                             <TableCell
                                                                 key={
                                                                     cell.id
                                                                 }
+                                                                sx={{
+                                                                    ...(stickyBreadName
+                                                                        ? {
+                                                                            position:
+                                                                                "sticky",
+
+                                                                            left:
+                                                                                0,
+
+                                                                            zIndex:
+                                                                                1,
+
+                                                                            bgcolor:
+                                                                                "background.paper",
+
+                                                                            borderRight:
+                                                                                1,
+
+                                                                            borderRightColor:
+                                                                                "divider",
+                                                                        }
+                                                                        : {}),
+                                                                }}
                                                             >
                                                                 {flexRender(
                                                                     cell
@@ -465,6 +601,10 @@ export function BrotTable({
                                 }
                             )}
 
+
+                        {/* ================================================= */}
+                        {/* Keine Produkte                                    */}
+                        {/* ================================================= */}
 
                         {table
                             .getRowModel()

@@ -22,19 +22,32 @@ import {
     TableSortLabel,
     Tooltip,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 
-import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
+import HelpOutlinedIcon
+    from "@mui/icons-material/HelpOutlined";
 
 
 const ALLERGEN_LABELS = {
-    eier: "Eier",
-    milch: "Milch",
-    sesam: "Sesam",
+    eier:
+        "Eier",
+
+    milch:
+        "Milch",
+
+    sesam:
+        "Sesam",
+
     schalenfruechte:
         "Schalenfrüchte",
-    sellerie: "Sellerie",
-    soja: "Soja",
+
+    sellerie:
+        "Sellerie",
+
+    soja:
+        "Soja",
 };
 
 
@@ -49,9 +62,13 @@ function formatGetreideName(
         return "";
     }
 
+
     return value
         .toLowerCase()
-        .replace(/_/g, " ")
+        .replace(
+            /_/g,
+            " "
+        )
         .replace(
             /\b\w/g,
             character =>
@@ -63,12 +80,15 @@ function formatGetreideName(
 function getVisibleAllergenEntries(
     allergenInfo
 ) {
-    if (!allergenInfo) {
+    if (
+        !allergenInfo
+    ) {
         return [];
     }
 
 
-    const entries = [];
+    const entries =
+        [];
 
 
     if (
@@ -76,17 +96,22 @@ function getVisibleAllergenEntries(
             allergenInfo.getreide
         ) &&
         allergenInfo.getreide
-            .length > 0
+            .length >
+        0
     ) {
         entries.push({
-            label: "Getreide",
+            label:
+                "Getreide",
 
             value:
-                allergenInfo.getreide
+                allergenInfo
+                    .getreide
                     .map(
                         formatGetreideName
                     )
-                    .join(", "),
+                    .join(
+                        ", "
+                    ),
         });
     }
 
@@ -94,14 +119,23 @@ function getVisibleAllergenEntries(
     Object.entries(
         ALLERGEN_LABELS
     ).forEach(
-        ([key, label]) => {
+        (
+            [
+                key,
+                label,
+            ]
+        ) => {
             if (
-                allergenInfo[key] ===
+                allergenInfo[
+                    key
+                ] ===
                 true
             ) {
                 entries.push({
                     label,
-                    value: null,
+
+                    value:
+                        null,
                 });
             }
         }
@@ -111,13 +145,17 @@ function getVisibleAllergenEntries(
     if (
         typeof allergenInfo.hinweis ===
             "string" &&
-        allergenInfo.hinweis.trim()
+        allergenInfo.hinweis
+            .trim()
     ) {
         entries.push({
-            label: "Hinweis",
+            label:
+                "Hinweis",
 
             value:
-                allergenInfo.hinweis.trim(),
+                allergenInfo
+                    .hinweis
+                    .trim(),
         });
     }
 
@@ -135,7 +173,10 @@ function AllergenInfo({
         );
 
 
-    if (entries.length === 0) {
+    if (
+        entries.length ===
+        0
+    ) {
         return null;
     }
 
@@ -148,20 +189,29 @@ function AllergenInfo({
                 <Box>
                     <Typography
                         variant="subtitle2"
-                        fontWeight={700}
+                        fontWeight={
+                            700
+                        }
                         gutterBottom
                     >
                         Allergene
                     </Typography>
 
-                    <Stack spacing={0.5}>
+
+                    <Stack
+                        spacing={
+                            0.5
+                        }
+                    >
                         {entries.map(
                             (
                                 entry,
                                 index
                             ) => (
                                 <Typography
-                                    key={`${entry.label}-${index}`}
+                                    key={
+                                        `${entry.label}-${index}`
+                                    }
                                     variant="body2"
                                 >
                                     <strong>
@@ -170,9 +220,11 @@ function AllergenInfo({
                                         }
                                     </strong>
 
-                                    {entry.value
-                                        ? `: ${entry.value}`
-                                        : ""}
+                                    {
+                                        entry.value
+                                            ? `: ${entry.value}`
+                                            : ""
+                                    }
                                 </Typography>
                             )
                         )}
@@ -183,8 +235,9 @@ function AllergenInfo({
             <IconButton
                 size="small"
                 aria-label="Allergeninformationen anzeigen"
-                onClick={event =>
-                    event.stopPropagation()
+                onClick={
+                    event =>
+                        event.stopPropagation()
                 }
             >
                 <HelpOutlinedIcon
@@ -201,9 +254,38 @@ export function BrotBestandTable({
     data,
     dispatchModal,
 }) {
-    const [sorting, setSorting] =
-        React.useState([]);
+    // =========================================================================
+    // State
+    // =========================================================================
 
+    const [
+        sorting,
+        setSorting,
+    ] =
+        React.useState(
+            []
+        );
+
+
+    // =========================================================================
+    // Responsive
+    // =========================================================================
+
+    const theme =
+        useTheme();
+
+
+    const isSmallScreen =
+        useMediaQuery(
+            theme.breakpoints.down(
+                "sm"
+            )
+        );
+
+
+    // =========================================================================
+    // Tabelle
+    // =========================================================================
 
     const table =
         useReactTable({
@@ -225,28 +307,48 @@ export function BrotBestandTable({
         });
 
 
+    // =========================================================================
+    // Render
+    // =========================================================================
+
     return (
         <TableContainer
-            component={Paper}
-            elevation={0}
+            component={
+                Paper
+            }
+            elevation={
+                0
+            }
             sx={{
-                width: "100%",
+                flex:
+                    1,
 
-                maxHeight: {
-                    xs:
-                        "calc(100vh - 250px)",
+                minHeight:
+                    0,
 
-                    md:
-                        "calc(100vh - 230px)",
-                },
+                height:
+                    "100%",
 
-                border: 1,
+                width:
+                    "100%",
+
+                border:
+                    1,
+
                 borderColor:
                     "divider",
 
-                borderRadius: 2,
+                borderRadius:
+                    2,
 
-                overflow: "auto",
+                overflow:
+                    "auto",
+
+                overscrollBehavior:
+                    "contain",
+
+                WebkitOverflowScrolling:
+                    "touch",
             }}
         >
             <Table
@@ -254,7 +356,11 @@ export function BrotBestandTable({
                 size="small"
                 aria-label="Brotbestand"
                 sx={{
-                    minWidth: 720,
+                    width:
+                        "100%",
+
+                    minWidth:
+                        720,
 
                     "& td, & th": {
                         whiteSpace:
@@ -265,6 +371,10 @@ export function BrotBestandTable({
                     },
                 }}
             >
+                {/* ========================================================= */}
+                {/* Header                                                    */}
+                {/* ========================================================= */}
+
                 <TableHead>
                     {table
                         .getHeaderGroups()
@@ -278,10 +388,24 @@ export function BrotBestandTable({
                                     {headerGroup.headers.map(
                                         header => {
                                             const sorted =
-                                                header.column.getIsSorted();
+                                                header
+                                                    .column
+                                                    .getIsSorted();
+
 
                                             const sortable =
-                                                header.column.getCanSort();
+                                                header
+                                                    .column
+                                                    .getCanSort();
+
+
+                                            const stickyProduct =
+                                                isSmallScreen &&
+                                                header
+                                                    .column
+                                                    .id ===
+                                                    "name";
+
 
                                             return (
                                                 <TableCell
@@ -293,7 +417,7 @@ export function BrotBestandTable({
                                                         "asc"
                                                             ? "asc"
                                                             : sorted ===
-                                                            "desc"
+                                                                "desc"
                                                                 ? "desc"
                                                                 : false
                                                     }
@@ -303,42 +427,79 @@ export function BrotBestandTable({
 
                                                         bgcolor:
                                                             "background.paper",
+
+                                                        zIndex:
+                                                            stickyProduct
+                                                                ? 4
+                                                                : 2,
+
+                                                        ...(stickyProduct
+                                                            ? {
+                                                                position:
+                                                                    "sticky",
+
+                                                                left:
+                                                                    0,
+
+                                                                minWidth:
+                                                                    160,
+
+                                                                maxWidth:
+                                                                    160,
+
+                                                                borderRight:
+                                                                    1,
+
+                                                                borderRightColor:
+                                                                    "divider",
+                                                            }
+                                                            : {}),
                                                     }}
                                                 >
-                                                    {header.isPlaceholder ? null : sortable ? (
-                                                        <TableSortLabel
-                                                            active={
-                                                                Boolean(
-                                                                    sorted
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : sortable
+                                                            ? (
+                                                                <TableSortLabel
+                                                                    active={
+                                                                        Boolean(
+                                                                            sorted
+                                                                        )
+                                                                    }
+                                                                    direction={
+                                                                        sorted ===
+                                                                        "desc"
+                                                                            ? "desc"
+                                                                            : "asc"
+                                                                    }
+                                                                    onClick={
+                                                                        header
+                                                                            .column
+                                                                            .getToggleSortingHandler()
+                                                                    }
+                                                                >
+                                                                    {flexRender(
+                                                                        header
+                                                                            .column
+                                                                            .columnDef
+                                                                            .header,
+
+                                                                        header
+                                                                            .getContext()
+                                                                    )}
+                                                                </TableSortLabel>
+                                                            )
+                                                            : (
+                                                                flexRender(
+                                                                    header
+                                                                        .column
+                                                                        .columnDef
+                                                                        .header,
+
+                                                                    header
+                                                                        .getContext()
                                                                 )
-                                                            }
-                                                            direction={
-                                                                sorted ===
-                                                                "desc"
-                                                                    ? "desc"
-                                                                    : "asc"
-                                                            }
-                                                            onClick={
-                                                                header.column.getToggleSortingHandler()
-                                                            }
-                                                        >
-                                                            {flexRender(
-                                                                header
-                                                                    .column
-                                                                    .columnDef
-                                                                    .header,
-                                                                header.getContext()
                                                             )}
-                                                        </TableSortLabel>
-                                                    ) : (
-                                                        flexRender(
-                                                            header
-                                                                .column
-                                                                .columnDef
-                                                                .header,
-                                                            header.getContext()
-                                                        )
-                                                    )}
                                                 </TableCell>
                                             );
                                         }
@@ -348,127 +509,183 @@ export function BrotBestandTable({
                         )}
                 </TableHead>
 
+
+                {/* ========================================================= */}
+                {/* Body                                                      */}
+                {/* ========================================================= */}
+
                 <TableBody>
                     {table
                         .getRowModel()
-                        .rows.map(row => {
-                            const produkt =
-                                row.original;
+                        .rows
+                        .map(
+                            row => {
+                                const produkt =
+                                    row.original;
 
-                            return (
-                                <TableRow
-                                    key={
-                                        row.id
-                                    }
-                                    hover
-                                    onClick={() =>
-                                        dispatchModal(
-                                            "EditBrotBestandModal",
-                                            produkt
-                                        )
-                                    }
-                                    sx={{
-                                        cursor:
-                                            "pointer",
 
-                                        opacity:
-                                            produkt.verfuegbarkeit
-                                                ? 1
-                                                : 0.55,
+                                return (
+                                    <TableRow
+                                        key={
+                                            row.id
+                                        }
+                                        hover
+                                        onClick={() =>
+                                            dispatchModal(
+                                                "EditBrotBestandModal",
+                                                produkt
+                                            )
+                                        }
+                                        sx={{
+                                            cursor:
+                                                "pointer",
 
-                                        "&:last-child td":
-                                            {
+                                            opacity:
+                                                produkt.verfuegbarkeit
+                                                    ? 1
+                                                    : 0.55,
+
+                                            "&:last-child td": {
                                                 borderBottom:
                                                     0,
                                             },
-                                    }}
-                                >
-                                    {row
-                                        .getVisibleCells()
-                                        .map(
-                                            cell => (
-                                                <TableCell
-                                                    key={
-                                                        cell.id
-                                                    }
-                                                >
-                                                    {cell
-                                                        .column
-                                                        .id ===
-                                                    "name" ? (
-                                                        <Stack
-                                                            direction="row"
-                                                            alignItems="center"
-                                                            spacing={
-                                                                0.5
+                                        }}
+                                    >
+                                        {row
+                                            .getVisibleCells()
+                                            .map(
+                                                cell => {
+                                                    const columnId =
+                                                        cell
+                                                            .column
+                                                            .id;
+
+
+                                                    const stickyProduct =
+                                                        isSmallScreen &&
+                                                        columnId ===
+                                                            "name";
+
+
+                                                    return (
+                                                        <TableCell
+                                                            key={
+                                                                cell.id
                                                             }
+                                                            sx={{
+                                                                ...(stickyProduct
+                                                                    ? {
+                                                                        position:
+                                                                            "sticky",
+
+                                                                        left:
+                                                                            0,
+
+                                                                        zIndex:
+                                                                            1,
+
+                                                                        minWidth:
+                                                                            160,
+
+                                                                        maxWidth:
+                                                                            160,
+
+                                                                        bgcolor:
+                                                                            "background.paper",
+
+                                                                        borderRight:
+                                                                            1,
+
+                                                                        borderRightColor:
+                                                                            "divider",
+                                                                    }
+                                                                    : {}),
+                                                            }}
                                                         >
-                                                            <Typography
-                                                                variant="body2"
-                                                                fontWeight={
-                                                                    600
-                                                                }
-                                                            >
-                                                                {flexRender(
-                                                                    cell
-                                                                        .column
-                                                                        .columnDef
-                                                                        .cell,
-                                                                    cell.getContext()
-                                                                )}
-                                                            </Typography>
+                                                            {
+                                                                columnId ===
+                                                                "name" ? (
+                                                                    <Stack
+                                                                        direction="row"
+                                                                        alignItems="center"
+                                                                        spacing={
+                                                                            0.5
+                                                                        }
+                                                                    >
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            fontWeight={
+                                                                                600
+                                                                            }
+                                                                        >
+                                                                            {flexRender(
+                                                                                cell
+                                                                                    .column
+                                                                                    .columnDef
+                                                                                    .cell,
 
-                                                            <AllergenInfo
-                                                                allergenInfo={
-                                                                    produkt.allergenInfo
-                                                                }
-                                                            />
-                                                        </Stack>
-                                                    ) : cell
-                                                          .column
-                                                          .id ===
-                                                      "verfuegbarkeit" ? (
-                                                        <Chip
-                                                            size="small"
+                                                                                cell
+                                                                                    .getContext()
+                                                                            )}
+                                                                        </Typography>
 
-                                                            color={
-                                                                produkt.verfuegbarkeit
-                                                                    ? "success"
-                                                                    : "default"
+
+                                                                        <AllergenInfo
+                                                                            allergenInfo={
+                                                                                produkt.allergenInfo
+                                                                            }
+                                                                        />
+                                                                    </Stack>
+                                                                ) : columnId ===
+                                                                  "verfuegbarkeit" ? (
+                                                                    <Chip
+                                                                        size="small"
+                                                                        color={
+                                                                            produkt.verfuegbarkeit
+                                                                                ? "success"
+                                                                                : "default"
+                                                                        }
+                                                                        variant={
+                                                                            produkt.verfuegbarkeit
+                                                                                ? "filled"
+                                                                                : "outlined"
+                                                                        }
+                                                                        label={
+                                                                            produkt.verfuegbarkeit
+                                                                                ? "Verfügbar"
+                                                                                : "Nicht verfügbar"
+                                                                        }
+                                                                    />
+                                                                ) : (
+                                                                    flexRender(
+                                                                        cell
+                                                                            .column
+                                                                            .columnDef
+                                                                            .cell,
+
+                                                                        cell
+                                                                            .getContext()
+                                                                    )
+                                                                )
                                                             }
+                                                        </TableCell>
+                                                    );
+                                                }
+                                            )}
+                                    </TableRow>
+                                );
+                            }
+                        )}
 
-                                                            variant={
-                                                                produkt.verfuegbarkeit
-                                                                    ? "filled"
-                                                                    : "outlined"
-                                                            }
 
-                                                            label={
-                                                                produkt.verfuegbarkeit
-                                                                    ? "Verfügbar"
-                                                                    : "Nicht verfügbar"
-                                                            }
-                                                        />
-                                                    ) : (
-                                                        flexRender(
-                                                            cell
-                                                                .column
-                                                                .columnDef
-                                                                .cell,
-                                                            cell.getContext()
-                                                        )
-                                                    )}
-                                                </TableCell>
-                                            )
-                                        )}
-                                </TableRow>
-                            );
-                        })}
-
+                    {/* ===================================================== */}
+                    {/* Leerzustand                                           */}
+                    {/* ===================================================== */}
 
                     {table
                         .getRowModel()
-                        .rows.length ===
+                        .rows
+                        .length ===
                         0 && (
                         <TableRow>
                             <TableCell
@@ -477,14 +694,14 @@ export function BrotBestandTable({
                                 }
                                 align="center"
                                 sx={{
-                                    py: 6,
+                                    py:
+                                        6,
+
                                     color:
                                         "text.secondary",
                                 }}
                             >
-                                Keine
-                                Brotprodukte
-                                vorhanden.
+                                Keine Brotprodukte vorhanden.
                             </TableCell>
                         </TableRow>
                     )}

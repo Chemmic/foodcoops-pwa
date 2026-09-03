@@ -32,18 +32,18 @@ export function MainBestellung() {
     // Aktiver Tab
     // =========================================================================
 
-    const getActiveTab = () => {
-        if (
-            location.pathname.startsWith(
-                "/mainBestellung/brotbestellung"
-            )
-        ) {
-            return "brotbestellung";
-        }
+    const getActiveTab =
+        () => {
+            if (
+                location.pathname.startsWith(
+                    "/mainBestellung/brotbestellung"
+                )
+            ) {
+                return "brotbestellung";
+            }
 
-
-        return "bestellung";
-    };
+            return "bestellung";
+        };
 
 
     // =========================================================================
@@ -55,18 +55,24 @@ export function MainBestellung() {
             <Paper
                 elevation={0}
                 sx={{
-                    mb: 2,
+                    mb: {
+                        xs: 1,
+                        sm: 2,
+                    },
 
                     border: 1,
+
                     borderColor:
                         "divider",
 
-                    borderRadius: 2,
+                    borderRadius:
+                        2,
 
                     overflow:
                         "hidden",
 
-                    flexShrink: 0,
+                    flexShrink:
+                        0,
                 }}
             >
                 <Tabs
@@ -77,6 +83,19 @@ export function MainBestellung() {
                     scrollButtons="auto"
                     allowScrollButtonsMobile
                     aria-label="Bestellbereiche"
+                    sx={{
+                        minHeight: {
+                            xs: 44,
+                            sm: 48,
+                        },
+
+                        "& .MuiTab-root": {
+                            minHeight: {
+                                xs: 44,
+                                sm: 48,
+                            },
+                        },
+                    }}
                 >
                     <Tab
                         value="bestellung"

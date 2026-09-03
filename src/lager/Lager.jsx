@@ -14,7 +14,9 @@ import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import StraightenOutlinedIcon from "@mui/icons-material/StraightenOutlined";
 
-import { toast } from "react-toastify";
+import {
+    toast,
+} from "react-toastify";
 
 import {
     jsPDF,
@@ -853,118 +855,120 @@ export function Lager() {
     // PDF
     // =========================================================================
 
-    const createPDF = () => {
-        const doc =
-            new jsPDF();
+    const createPDF =
+        () => {
+            const doc =
+                new jsPDF();
 
 
-        const currentDate =
-            new Date();
+            const currentDate =
+                new Date();
 
 
-        const formattedDate =
-            currentDate.toLocaleDateString(
-                "de-DE"
-            );
-
-
-        const fileDate = [
-            currentDate.getDate(),
-            currentDate.getMonth() +
-                1,
-            currentDate.getFullYear(),
-        ].join(
-            "-"
-        );
-
-
-        doc.text(
-            `Einkaufsliste Lager ${formattedDate}`,
-            14,
-            10
-        );
-
-
-        const pdfData =
-            data
-                .filter(
-                    item =>
-                        !Object.prototype.hasOwnProperty.call(
-                            item,
-                            "produkte"
-                        )
-                )
-                .map(
-                    product => {
-                        const soll =
-                            Number(
-                                product
-                                    ?.lagerbestand
-                                    ?.sollLagerbestand ??
-                                0
-                            );
-
-
-                        const ist =
-                            Number(
-                                product
-                                    ?.lagerbestand
-                                    ?.istLagerbestand ??
-                                0
-                            );
-
-
-                        return {
-                            productName:
-                                product.name,
-
-                            differenz:
-                                soll -
-                                ist,
-                        };
-                    }
-                )
-                .filter(
-                    ({
-                        differenz,
-                    }) =>
-                        differenz >
-                        0
-                )
-                .map(
-                    ({
-                        productName,
-                        differenz,
-                    }) => [
-                        productName,
-                        differenz,
-                    ]
+            const formattedDate =
+                currentDate.toLocaleDateString(
+                    "de-DE"
                 );
 
 
-        autoTable(
-            doc,
-            {
-                head: [
-                    [
-                        "Produktname",
-                        "Fehlende Menge",
+            const fileDate = [
+                currentDate.getDate(),
+                currentDate.getMonth() + 1,
+                currentDate.getFullYear(),
+            ].join(
+                "-"
+            );
+
+
+            doc.text(
+                `Einkaufsliste Lager ${formattedDate}`,
+                14,
+                10
+            );
+
+
+            const pdfData =
+                data
+                    .filter(
+                        item =>
+                            !Object.prototype
+                                .hasOwnProperty
+                                .call(
+                                    item,
+                                    "produkte"
+                                )
+                    )
+                    .map(
+                        product => {
+                            const soll =
+                                Number(
+                                    product
+                                        ?.lagerbestand
+                                        ?.sollLagerbestand ??
+                                    0
+                                );
+
+
+                            const ist =
+                                Number(
+                                    product
+                                        ?.lagerbestand
+                                        ?.istLagerbestand ??
+                                    0
+                                );
+
+
+                            return {
+                                productName:
+                                    product.name,
+
+                                differenz:
+                                    soll -
+                                    ist,
+                            };
+                        }
+                    )
+                    .filter(
+                        ({
+                            differenz,
+                        }) =>
+                            differenz >
+                            0
+                    )
+                    .map(
+                        ({
+                            productName,
+                            differenz,
+                        }) => [
+                            productName,
+                            differenz,
+                        ]
+                    );
+
+
+            autoTable(
+                doc,
+                {
+                    head: [
+                        [
+                            "Produktname",
+                            "Fehlende Menge",
+                        ],
                     ],
-                ],
 
-                body:
-                    pdfData,
+                    body:
+                        pdfData,
 
-                startY:
-                    18,
-            }
-        );
+                    startY:
+                        18,
+                }
+            );
 
 
-        doc.save(
-            `Einkaufsliste-Lager-${fileDate}.pdf`
-        );
-    };
+            doc.save(
+                `Einkaufsliste-Lager-${fileDate}.pdf`
+            );
+        };
 
 
     // =========================================================================
@@ -973,15 +977,17 @@ export function Lager() {
 
     return (
         <Stack
-            spacing={2}
+            spacing={{
+                xs:
+                    1.5,
+
+                sm:
+                    2,
+            }}
             sx={{
                 width:
                     "100%",
 
-                /*
-                 * Dieser Screen selbst wird auf Desktop
-                 * NICHT gescrollt.
-                 */
                 flex:
                     1,
 
@@ -1018,6 +1024,31 @@ export function Lager() {
                 <Typography
                     variant="h2"
                     gutterBottom
+                    sx={{
+                        fontSize: {
+                            xs:
+                                "1.5rem",
+
+                            sm:
+                                undefined,
+                        },
+
+                        lineHeight: {
+                            xs:
+                                1.2,
+
+                            sm:
+                                undefined,
+                        },
+
+                        mb: {
+                            xs:
+                                0.5,
+
+                            sm:
+                                1,
+                        },
+                    }}
                 >
                     Lagerbestand
                 </Typography>
@@ -1026,12 +1057,18 @@ export function Lager() {
                 <Typography
                     variant="body1"
                     color="text.secondary"
+                    sx={{
+                        lineHeight: {
+                            xs:
+                                1.45,
+
+                            sm:
+                                1.5,
+                        },
+                    }}
                 >
-                    Produkte, Kategorien und
-                    Einheiten verwalten sowie
-                    eine Einkaufsliste aus dem
-                    aktuellen Lagerbestand
-                    erzeugen.
+                    Produkte, Kategorien und Einheiten verwalten sowie eine
+                    Einkaufsliste aus dem aktuellen Lagerbestand erzeugen.
                 </Typography>
             </Box>
 
@@ -1048,7 +1085,7 @@ export function Lager() {
 
                     p: {
                         xs:
-                            1.5,
+                            1.25,
 
                         sm:
                             2,
@@ -1059,24 +1096,80 @@ export function Lager() {
 
                     borderColor:
                         "divider",
+
+                    borderRadius:
+                        2,
                 }}
             >
-                <Stack
-                    direction={{
-                        xs:
-                            "column",
-
-                        sm:
-                            "row",
-                    }}
-                    spacing={
-                        1
-                    }
+                <Box
                     sx={{
-                        flexWrap:
-                            "wrap",
+                        display:
+                            "grid",
+
+                        gridTemplateColumns: {
+                            xs:
+                                "repeat(2, minmax(0, 1fr))",
+
+                            sm:
+                                "repeat(4, auto)",
+                        },
+
+                        gap:
+                            1,
+
+                        alignItems:
+                            "stretch",
+
+                        justifyContent: {
+                            sm:
+                                "flex-start",
+                        },
+
+                        "& .MuiButton-root": {
+                            minWidth:
+                                0,
+
+                            minHeight: {
+                                xs:
+                                    44,
+
+                                sm:
+                                    40,
+                            },
+
+                            px: {
+                                xs:
+                                    1,
+
+                                sm:
+                                    2,
+                            },
+
+                            whiteSpace: {
+                                xs:
+                                    "normal",
+
+                                sm:
+                                    "nowrap",
+                            },
+
+                            lineHeight:
+                                1.2,
+
+                            textAlign:
+                                "center",
+                        },
+
+                        "& .MuiButton-startIcon": {
+                            mr: {
+                                xs:
+                                    0.5,
+
+                                sm:
+                                    1,
+                            },
+                        },
                     }}
-                    useFlexGap
                 >
                     <Button
                         variant="outlined"
@@ -1134,7 +1227,7 @@ export function Lager() {
                     >
                         Einkaufsliste
                     </Button>
-                </Stack>
+                </Box>
             </Paper>
 
 
@@ -1144,9 +1237,6 @@ export function Lager() {
 
             <Box
                 sx={{
-                    /*
-                     * Nimmt EXAKT den verbleibenden Platz.
-                     */
                     flex:
                         1,
 

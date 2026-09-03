@@ -231,23 +231,6 @@ export function FrischBestandManagement() {
     // =========================================================================
     // Backend Response vereinheitlichen
     // =========================================================================
-    //
-    // Neues Backend:
-    //
-    // [
-    //     {...},
-    //     {...}
-    // ]
-    //
-    // Altes HAL Backend:
-    //
-    // {
-    //     "_embedded": {
-    //         "frischBestandRepresentationList": [...]
-    //     }
-    // }
-    //
-    // =========================================================================
 
     const extractArray = (
         response,
@@ -482,9 +465,6 @@ export function FrischBestandManagement() {
                 "frisch";
 
 
-            /*
-             * HAL Links nie zurück ans Backend schicken.
-             */
             delete changedData
                 ._links;
 
@@ -885,11 +865,14 @@ export function FrischBestandManagement() {
 
     return (
         <Stack
-            spacing={2}
+            spacing={{
+                xs:
+                    1.5,
+
+                sm:
+                    2,
+            }}
             sx={{
-                /*
-                 * Identisch zu Lager und Brot.
-                 */
                 width:
                     "100%",
 
@@ -929,6 +912,31 @@ export function FrischBestandManagement() {
                 <Typography
                     variant="h2"
                     gutterBottom
+                    sx={{
+                        fontSize: {
+                            xs:
+                                "1.5rem",
+
+                            sm:
+                                undefined,
+                        },
+
+                        lineHeight: {
+                            xs:
+                                1.2,
+
+                            sm:
+                                undefined,
+                        },
+
+                        mb: {
+                            xs:
+                                0.5,
+
+                            sm:
+                                1,
+                        },
+                    }}
                 >
                     Frischbestand
                 </Typography>
@@ -937,12 +945,18 @@ export function FrischBestandManagement() {
                 <Typography
                     variant="body1"
                     color="text.secondary"
+                    sx={{
+                        lineHeight: {
+                            xs:
+                                1.45,
+
+                            sm:
+                                1.5,
+                        },
+                    }}
                 >
-                    Frischprodukte,
-                    Verfügbarkeit,
-                    Gebindegrößen,
-                    Kategorien und
-                    Einheiten verwalten.
+                    Frischprodukte, Verfügbarkeit, Gebindegrößen,
+                    Kategorien und Einheiten verwalten.
                 </Typography>
             </Box>
 
@@ -959,7 +973,7 @@ export function FrischBestandManagement() {
 
                     p: {
                         xs:
-                            1.5,
+                            1.25,
 
                         sm:
                             2,
@@ -970,24 +984,80 @@ export function FrischBestandManagement() {
 
                     borderColor:
                         "divider",
+
+                    borderRadius:
+                        2,
                 }}
             >
-                <Stack
-                    direction={{
-                        xs:
-                            "column",
-
-                        sm:
-                            "row",
-                    }}
-                    spacing={
-                        1
-                    }
+                <Box
                     sx={{
-                        flexWrap:
-                            "wrap",
+                        display:
+                            "grid",
+
+                        gridTemplateColumns: {
+                            xs:
+                                "repeat(2, minmax(0, 1fr))",
+
+                            sm:
+                                "repeat(3, auto)",
+                        },
+
+                        gap:
+                            1,
+
+                        alignItems:
+                            "stretch",
+
+                        justifyContent: {
+                            sm:
+                                "flex-start",
+                        },
+
+                        "& .MuiButton-root": {
+                            minWidth:
+                                0,
+
+                            minHeight: {
+                                xs:
+                                    44,
+
+                                sm:
+                                    40,
+                            },
+
+                            px: {
+                                xs:
+                                    1,
+
+                                sm:
+                                    2,
+                            },
+
+                            whiteSpace: {
+                                xs:
+                                    "normal",
+
+                                sm:
+                                    "nowrap",
+                            },
+
+                            lineHeight:
+                                1.2,
+
+                            textAlign:
+                                "center",
+                        },
+
+                        "& .MuiButton-startIcon": {
+                            mr: {
+                                xs:
+                                    0.5,
+
+                                sm:
+                                    1,
+                            },
+                        },
                     }}
-                    useFlexGap
                 >
                     <Button
                         variant="outlined"
@@ -999,6 +1069,23 @@ export function FrischBestandManagement() {
                                 "KategorienModal"
                             )
                         }
+                        sx={{
+                            gridColumn: {
+                                xs:
+                                    "1",
+
+                                sm:
+                                    "auto",
+                            },
+
+                            gridRow: {
+                                xs:
+                                    "2",
+
+                                sm:
+                                    "auto",
+                            },
+                        }}
                     >
                         Kategorien
                     </Button>
@@ -1014,6 +1101,23 @@ export function FrischBestandManagement() {
                                 "NewFrischBestandModal"
                             )
                         }
+                        sx={{
+                            gridColumn: {
+                                xs:
+                                    "1 / -1",
+
+                                sm:
+                                    "auto",
+                            },
+
+                            gridRow: {
+                                xs:
+                                    "1",
+
+                                sm:
+                                    "auto",
+                            },
+                        }}
                     >
                         Frischprodukt erstellen
                     </Button>
@@ -1029,10 +1133,27 @@ export function FrischBestandManagement() {
                                 "EinheitenModal"
                             )
                         }
+                        sx={{
+                            gridColumn: {
+                                xs:
+                                    "2",
+
+                                sm:
+                                    "auto",
+                            },
+
+                            gridRow: {
+                                xs:
+                                    "2",
+
+                                sm:
+                                    "auto",
+                            },
+                        }}
                     >
                         Einheiten
                     </Button>
-                </Stack>
+                </Box>
             </Paper>
 
 
@@ -1042,10 +1163,6 @@ export function FrischBestandManagement() {
 
             <Box
                 sx={{
-                    /*
-                     * Nimmt ausschließlich den nach Kopf und
-                     * Buttonleiste verbleibenden Platz ein.
-                     */
                     flex:
                         1,
 

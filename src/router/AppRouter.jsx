@@ -12,7 +12,12 @@ import {
     Routes,
     useLocation,
 } from "react-router";
+import AccountCircleOutlinedIcon
+    from "@mui/icons-material/AccountCircleOutlined";
 
+import {
+    Profil,
+} from "../profil/Profil.jsx";
 import {
     AppBar,
     Avatar,
@@ -285,6 +290,16 @@ const AppContent = () => {
                         <HomeOutlinedIcon />,
                 },
                 {
+                label:
+                    "Mein Profil",
+
+                path:
+                    "/profil",
+
+                icon:
+                    <AccountCircleOutlinedIcon />,
+            },
+                {
                     label:
                         "Bestellung",
 
@@ -363,7 +378,13 @@ const AppContent = () => {
         ) {
             return "Bestellung";
         }
-
+if (
+            currentRoute.startsWith(
+                "/profil"
+            )
+        ) {
+            return "Mein Profil";
+        }
 
         if (
             currentRoute.startsWith(
@@ -1189,7 +1210,14 @@ const AppContent = () => {
                             }
                         />
 
-
+                        <Route
+                            path="/profil"
+                            element={
+                                <PrivateRoute>
+                                    <Profil />
+                                </PrivateRoute>
+                            }
+                        />
                         <Route
                             path="/home"
                             element={

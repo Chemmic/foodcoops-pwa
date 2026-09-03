@@ -64,19 +64,28 @@ const FRISCHBESTAND = "frischBestand";
 const BROTBESTAND = "brotBestand";
 const BROTBESTELLUNG = "brotBestellung";
 
-const DATUM = "datum";
 const MENGE = "menge";
 const PERSON = "person";
+
+const CURRENT_ORDERS = "current";
+const PREVIOUS = "previous";
 
 const DEADLINE = "deadline";
 const LAST = "last";
 const CURRENT = "getEndDateOfDeadline";
 
-const EINKAUF = "einkauf";
-const MAILTOEINKAUFSMANAGEMENT = "mailToEinkaufsmanagement";
-const BESTANDBUYOBJECT = "einkaufe/create/bestandBuyObject";
+const PREISHISTORIE = "preisHistorie";
+const BESTAND = "bestand";
 
-const BESTELLUEBERSICHT = "bestellUebersicht";
+const EINKAUF = "einkauf";
+const MAILTOEINKAUFSMANAGEMENT =
+    "mailToEinkaufsmanagement";
+
+const BESTANDBUYOBJECT =
+    "einkaufe/create/bestandBuyObject";
+
+const BESTELLUEBERSICHT =
+    "bestellUebersicht";
 
 const GEBINDE = "gebinde";
 const DISCREPANCY = "discrepancy";
@@ -117,7 +126,9 @@ const createProdukt = (data) =>
     );
 
 
-const readProdukt = (id = undefined) =>
+const readProdukt = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             PRODUKTE,
@@ -126,7 +137,9 @@ const readProdukt = (id = undefined) =>
     );
 
 
-const deleteProdukt = (id) =>
+const deleteProdukt = (
+    id
+) =>
     fetch(
         apiUrl(
             PRODUKTE,
@@ -139,7 +152,10 @@ const deleteProdukt = (id) =>
     );
 
 
-const updateProdukt = (id, changedData) =>
+const updateProdukt = (
+    id,
+    changedData
+) =>
     fetch(
         apiUrl(
             PRODUKTE,
@@ -160,7 +176,9 @@ const updateProdukt = (id, changedData) =>
 // Kategorie
 // =============================================================================
 
-const readKategorie = (id = undefined) =>
+const readKategorie = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             KATEGORIEN,
@@ -190,7 +208,10 @@ const createKategorie = (
     );
 
 
-const updateKategorie = (id, name) =>
+const updateKategorie = (
+    id,
+    name
+) =>
     fetch(
         apiUrl(
             KATEGORIEN,
@@ -207,7 +228,9 @@ const updateKategorie = (id, name) =>
     );
 
 
-const deleteKategorie = (id) =>
+const deleteKategorie = (
+    id
+) =>
     fetch(
         apiUrl(
             KATEGORIEN,
@@ -224,7 +247,9 @@ const deleteKategorie = (id) =>
 // Einheit
 // =============================================================================
 
-const readEinheit = (id = undefined) =>
+const readEinheit = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             EINHEITEN,
@@ -233,7 +258,9 @@ const readEinheit = (id = undefined) =>
     );
 
 
-const createEinheit = (name) =>
+const createEinheit = (
+    name
+) =>
     fetch(
         apiUrl(EINHEITEN),
         {
@@ -248,7 +275,9 @@ const createEinheit = (name) =>
     );
 
 
-const deleteEinheit = (id) =>
+const deleteEinheit = (
+    id
+) =>
     fetch(
         apiUrl(
             EINHEITEN,
@@ -267,13 +296,19 @@ const deleteEinheit = (id) =>
 
 const readFrischBestellung = () =>
     fetch(
-        apiUrl(FRISCHBESTELLUNG)
+        apiUrl(
+            FRISCHBESTELLUNG
+        )
     );
 
 
-const createFrischBestellung = (data) =>
+const createFrischBestellung = (
+    data
+) =>
     fetch(
-        apiUrl(FRISCHBESTELLUNG),
+        apiUrl(
+            FRISCHBESTELLUNG
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -307,29 +342,63 @@ const updateFrischBestellung = (
     );
 
 
+/*
+ * Aktuelle Bestellungen einer Person.
+ *
+ * GET /frischBestellung/current/person/{personId}
+ */
 const readFrischBestellungProPerson =
     (personId) =>
         fetch(
             apiUrl(
                 FRISCHBESTELLUNG,
-                DATUM,
+                CURRENT_ORDERS,
+                PERSON,
                 personId
             )
         );
 
 
+/*
+ * Vorherige Bestellrunde einer Person.
+ *
+ * GET /frischBestellung/previous/person/{personId}
+ */
+const readFrischBestellungVorherigeProPerson =
+    (personId) =>
+        fetch(
+            apiUrl(
+                FRISCHBESTELLUNG,
+                PREVIOUS,
+                PERSON,
+                personId
+            )
+        );
+
+
+/*
+ * Summierte Bestellmenge aller Personen
+ * für die aktuelle Deadline.
+ *
+ * GET /frischBestellung/current/menge
+ */
 const readFrischBestellungProProdukt =
     () =>
         fetch(
             apiUrl(
                 FRISCHBESTELLUNG,
-                DATUM,
+                CURRENT_ORDERS,
                 MENGE
             )
         );
 
 
-const readFrischBestellungBetweenDatesProPerson =
+/*
+ * Komplette Bestellhistorie einer Person.
+ *
+ * GET /frischBestellung/person/{personId}
+ */
+const readFrischBestellungHistorieProPerson =
     (personId) =>
         fetch(
             apiUrl(
@@ -340,7 +409,9 @@ const readFrischBestellungBetweenDatesProPerson =
         );
 
 
-const deleteFrischBestellung = (id) =>
+const deleteFrischBestellung = (
+    id
+) =>
     fetch(
         apiUrl(
             FRISCHBESTELLUNG,
@@ -357,7 +428,9 @@ const deleteFrischBestellung = (id) =>
 // FrischBestand
 // =============================================================================
 
-const readFrischBestand = (id = undefined) =>
+const readFrischBestand = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             FRISCHBESTAND,
@@ -366,9 +439,13 @@ const readFrischBestand = (id = undefined) =>
     );
 
 
-const createFrischBestand = (data) =>
+const createFrischBestand = (
+    data
+) =>
     fetch(
-        apiUrl(FRISCHBESTAND),
+        apiUrl(
+            FRISCHBESTAND
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -401,7 +478,9 @@ const updateFrischBestand = (
     );
 
 
-const deleteFrischBestand = (id) =>
+const deleteFrischBestand = (
+    id
+) =>
     fetch(
         apiUrl(
             FRISCHBESTAND,
@@ -420,13 +499,19 @@ const deleteFrischBestand = (id) =>
 
 const readBrotBestellung = () =>
     fetch(
-        apiUrl(BROTBESTELLUNG)
+        apiUrl(
+            BROTBESTELLUNG
+        )
     );
 
 
-const createBrotBestellung = (data) =>
+const createBrotBestellung = (
+    data
+) =>
     fetch(
-        apiUrl(BROTBESTELLUNG),
+        apiUrl(
+            BROTBESTELLUNG
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -460,29 +545,63 @@ const updateBrotBestellung = (
     );
 
 
+/*
+ * Aktuelle Brotbestellungen einer Person.
+ *
+ * GET /brotBestellung/current/person/{personId}
+ */
 const readBrotBestellungProPerson =
     (personId) =>
         fetch(
             apiUrl(
                 BROTBESTELLUNG,
-                DATUM,
+                CURRENT_ORDERS,
+                PERSON,
                 personId
             )
         );
 
 
+/*
+ * Vorherige Brot-Bestellrunde einer Person.
+ *
+ * GET /brotBestellung/previous/person/{personId}
+ */
+const readBrotBestellungVorherigeProPerson =
+    (personId) =>
+        fetch(
+            apiUrl(
+                BROTBESTELLUNG,
+                PREVIOUS,
+                PERSON,
+                personId
+            )
+        );
+
+
+/*
+ * Summierte Brotbestellmenge aller Personen
+ * für die aktuelle Deadline.
+ *
+ * GET /brotBestellung/current/menge
+ */
 const readBrotBestellungProProdukt =
     () =>
         fetch(
             apiUrl(
                 BROTBESTELLUNG,
-                DATUM,
+                CURRENT_ORDERS,
                 MENGE
             )
         );
 
 
-const readBrotBestellungBetweenDatesProPerson =
+/*
+ * Komplette Brot-Bestellhistorie einer Person.
+ *
+ * GET /brotBestellung/person/{personId}
+ */
+const readBrotBestellungHistorieProPerson =
     (personId) =>
         fetch(
             apiUrl(
@@ -493,7 +612,9 @@ const readBrotBestellungBetweenDatesProPerson =
         );
 
 
-const deleteBrotBestellung = (id) =>
+const deleteBrotBestellung = (
+    id
+) =>
     fetch(
         apiUrl(
             BROTBESTELLUNG,
@@ -510,7 +631,9 @@ const deleteBrotBestellung = (id) =>
 // BrotBestand
 // =============================================================================
 
-const readBrotBestand = (id = undefined) =>
+const readBrotBestand = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             BROTBESTAND,
@@ -519,9 +642,13 @@ const readBrotBestand = (id = undefined) =>
     );
 
 
-const createBrotBestand = (data) =>
+const createBrotBestand = (
+    data
+) =>
     fetch(
-        apiUrl(BROTBESTAND),
+        apiUrl(
+            BROTBESTAND
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -554,7 +681,9 @@ const updateBrotBestand = (
     );
 
 
-const deleteBrotBestand = (id) =>
+const deleteBrotBestand = (
+    id
+) =>
     fetch(
         apiUrl(
             BROTBESTAND,
@@ -571,7 +700,9 @@ const deleteBrotBestand = (id) =>
 // Deadline
 // =============================================================================
 
-const readDeadline = (id = undefined) =>
+const readDeadline = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             DEADLINE,
@@ -589,7 +720,9 @@ const readLastDeadline = () =>
     );
 
 
-const readCurrentDeadline = (id) =>
+const readCurrentDeadline = (
+    id
+) =>
     fetch(
         apiUrl(
             DEADLINE,
@@ -599,9 +732,13 @@ const readCurrentDeadline = (id) =>
     );
 
 
-const createDeadline = (data) =>
+const createDeadline = (
+    data
+) =>
     fetch(
-        apiUrl(DEADLINE),
+        apiUrl(
+            DEADLINE
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -615,10 +752,32 @@ const createDeadline = (data) =>
 
 
 // =============================================================================
+// Preis-Historie
+// =============================================================================
+//
+// GET /preisHistorie/bestand/{bestandId}
+//
+// =============================================================================
+
+const readPreisHistorie = (
+    bestandId
+) =>
+    fetch(
+        apiUrl(
+            PREISHISTORIE,
+            BESTAND,
+            bestandId
+        )
+    );
+
+
+// =============================================================================
 // Einkauf
 // =============================================================================
 
-const readEinkauf = (id = undefined) =>
+const readEinkauf = (
+    id = undefined
+) =>
     fetch(
         apiUrl(
             EINKAUF,
@@ -645,9 +804,13 @@ const createEinkaufPdf = (
     );
 
 
-const createEinkauf = (data) =>
+const createEinkauf = (
+    data
+) =>
     fetch(
-        apiUrl(EINKAUF),
+        apiUrl(
+            EINKAUF
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -660,7 +823,9 @@ const createEinkauf = (data) =>
     );
 
 
-const deleteEinkauf = (id) =>
+const deleteEinkauf = (
+    id
+) =>
     fetch(
         apiUrl(
             EINKAUF,
@@ -673,9 +838,13 @@ const deleteEinkauf = (id) =>
     );
 
 
-const createBestandBuyObject = (data) =>
+const createBestandBuyObject = (
+    data
+) =>
     fetch(
-        apiUrl(BESTANDBUYOBJECT),
+        apiUrl(
+            BESTANDBUYOBJECT
+        ),
         {
             method: "POST",
             headers: JSON_HEADERS,
@@ -702,7 +871,9 @@ const sendMailToEinkaufsmanagement = (
             method: "POST",
             headers: JSON_HEADERS,
 
-            body: JSON.stringify(data)
+            body: JSON.stringify(
+                data
+            )
         }
     );
 
@@ -765,7 +936,9 @@ const addDiscrepancyToLastOrderList =
                 method: "POST",
                 headers: JSON_HEADERS,
 
-                body: JSON.stringify(data)
+                body: JSON.stringify(
+                    data
+                )
             }
         );
 
@@ -776,18 +949,26 @@ const addDiscrepancyToLastOrderList =
 
 const readConfig = () =>
     fetch(
-        apiUrl(CONFIG)
+        apiUrl(
+            CONFIG
+        )
     );
 
 
-const updateConfig = (data) =>
+const updateConfig = (
+    data
+) =>
     fetch(
-        apiUrl(CONFIG),
+        apiUrl(
+            CONFIG
+        ),
         {
             method: "PUT",
             headers: JSON_HEADERS,
 
-            body: JSON.stringify(data)
+            body: JSON.stringify(
+                data
+            )
         }
     );
 
@@ -798,7 +979,9 @@ const updateConfig = (data) =>
 
 const readGebindeOverview = () =>
     fetch(
-        apiUrl(GEBINDE)
+        apiUrl(
+            GEBINDE
+        )
     );
 
 
@@ -997,50 +1180,98 @@ const getBreadWithPersonPDFasByte = () =>
 // =============================================================================
 
 const DEFAULT_API = {
+    // -------------------------------------------------------------------------
+    // Produkt
+    // -------------------------------------------------------------------------
+
     createProdukt,
     readProdukt,
     deleteProdukt,
     updateProdukt,
+
+    // -------------------------------------------------------------------------
+    // Kategorie
+    // -------------------------------------------------------------------------
 
     createKategorie,
     readKategorie,
     deleteKategorie,
     updateKategorie,
 
+    // -------------------------------------------------------------------------
+    // Einheit
+    // -------------------------------------------------------------------------
+
     createEinheit,
     readEinheit,
     deleteEinheit,
 
+    // -------------------------------------------------------------------------
+    // FrischBestellung
+    // -------------------------------------------------------------------------
+
     readFrischBestellung,
+
     readFrischBestellungProPerson,
+    readFrischBestellungVorherigeProPerson,
     readFrischBestellungProProdukt,
-    readFrischBestellungBetweenDatesProPerson,
+    readFrischBestellungHistorieProPerson,
+
     createFrischBestellung,
     updateFrischBestellung,
     deleteFrischBestellung,
+
+    // -------------------------------------------------------------------------
+    // FrischBestand
+    // -------------------------------------------------------------------------
 
     readFrischBestand,
     createFrischBestand,
     deleteFrischBestand,
     updateFrischBestand,
 
+    // -------------------------------------------------------------------------
+    // BrotBestand
+    // -------------------------------------------------------------------------
+
     readBrotBestand,
     createBrotBestand,
     deleteBrotBestand,
     updateBrotBestand,
 
+    // -------------------------------------------------------------------------
+    // BrotBestellung
+    // -------------------------------------------------------------------------
+
     readBrotBestellung,
+
     readBrotBestellungProPerson,
+    readBrotBestellungVorherigeProPerson,
     readBrotBestellungProProdukt,
-    readBrotBestellungBetweenDatesProPerson,
+    readBrotBestellungHistorieProPerson,
+
     createBrotBestellung,
     updateBrotBestellung,
     deleteBrotBestellung,
+
+    // -------------------------------------------------------------------------
+    // Deadline
+    // -------------------------------------------------------------------------
 
     readDeadline,
     readLastDeadline,
     readCurrentDeadline,
     createDeadline,
+
+    // -------------------------------------------------------------------------
+    // Preis-Historie
+    // -------------------------------------------------------------------------
+
+    readPreisHistorie,
+
+    // -------------------------------------------------------------------------
+    // Einkauf
+    // -------------------------------------------------------------------------
 
     readEinkauf,
     createEinkaufPdf,
@@ -1049,22 +1280,42 @@ const DEFAULT_API = {
     createBestandBuyObject,
     sendMailToEinkaufsmanagement,
 
+    // -------------------------------------------------------------------------
+    // Bestellübersicht
+    // -------------------------------------------------------------------------
+
     readBestellUebersicht,
     readDiscrepancyOverviwe,
     updateDiscrepancy,
     addDiscrepancyToLastOrderList,
 
+    // -------------------------------------------------------------------------
+    // Configuration
+    // -------------------------------------------------------------------------
+
     readConfig,
     updateConfig,
 
+    // -------------------------------------------------------------------------
+    // Gebinde
+    // -------------------------------------------------------------------------
+
     readGebindeOverview,
     updateGebindeOverview,
+
+    // -------------------------------------------------------------------------
+    // Mail
+    // -------------------------------------------------------------------------
 
     sendTotalBestellUebersicht,
     sendBrotOrder,
     sendFrischOrder,
     sendBreadOrderWithPersons,
     sendInventoryStatus,
+
+    // -------------------------------------------------------------------------
+    // PDF
+    // -------------------------------------------------------------------------
 
     getBestellUebersichtPdf,
     getUebersichtBrotPdf,
@@ -1081,9 +1332,10 @@ const DEFAULT_API = {
 // React Context
 // =============================================================================
 
-const ApiContext = React.createContext(
-    DEFAULT_API
-);
+const ApiContext =
+    React.createContext(
+        DEFAULT_API
+    );
 
 
 export const ApiProvider = ({
@@ -1096,7 +1348,9 @@ export const ApiProvider = ({
     };
 
     return (
-        <ApiContext.Provider value={value}>
+        <ApiContext.Provider
+            value={value}
+        >
             {children}
         </ApiContext.Provider>
     );
@@ -1104,4 +1358,6 @@ export const ApiProvider = ({
 
 
 export const useApi = () =>
-    React.useContext(ApiContext);
+    React.useContext(
+        ApiContext
+    );

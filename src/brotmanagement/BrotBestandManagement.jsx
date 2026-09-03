@@ -9,17 +9,31 @@ import {
     Typography,
 } from "@mui/material";
 
-import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
+import AddBoxOutlinedIcon
+    from "@mui/icons-material/AddBoxOutlined";
 
-import { toast } from "react-toastify";
+import {
+    toast,
+} from "react-toastify";
 
-import { useApi } from "../ApiService.jsx";
+import {
+    useApi,
+} from "../ApiService.jsx";
 
-import { BrotBestandTable } from "./BrotBestandTable.jsx";
-import { EditBrotBestandModal } from "./EditBrotBestandModal.jsx";
-import { NewBrotBestandModal } from "./NewBrotBestandModal.jsx";
+import {
+    BrotBestandTable,
+} from "./BrotBestandTable.jsx";
 
-import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
+import {
+    EditBrotBestandModal,
+} from "./EditBrotBestandModal.jsx";
+
+import {
+    NewBrotBestandModal,
+} from "./NewBrotBestandModal.jsx";
+
+import NumberFormatComponent
+    from "../logic/NumberFormatComponent.jsx";
 
 
 export function BrotBestandManagement() {
@@ -45,16 +59,17 @@ export function BrotBestandManagement() {
                     accessorKey:
                         "gewicht",
 
-                    cell: info => (
-                        <NumberFormatComponent
-                            value={
-                                info.getValue()
-                            }
-                            includeFractionDigits={
-                                false
-                            }
-                        />
-                    ),
+                    cell:
+                        info => (
+                            <NumberFormatComponent
+                                value={
+                                    info.getValue()
+                                }
+                                includeFractionDigits={
+                                    false
+                                }
+                            />
+                        ),
                 },
 
                 {
@@ -72,13 +87,14 @@ export function BrotBestandManagement() {
                     accessorKey:
                         "preis",
 
-                    cell: info => (
-                        <NumberFormatComponent
-                            value={
-                                info.getValue()
-                            }
-                        />
-                    ),
+                    cell:
+                        info => (
+                            <NumberFormatComponent
+                                value={
+                                    info.getValue()
+                                }
+                            />
+                        ),
                 },
             ],
             []
@@ -177,24 +193,10 @@ export function BrotBestandManagement() {
                         }
 
 
-                        /*
-                         * Unterstützt beide Backend-Formate:
-                         *
-                         * Neues Backend:
-                         *
-                         * [
-                         *   {...},
-                         *   {...}
-                         * ]
-                         *
-                         * Altes HAL-Format:
-                         *
-                         * {
-                         *   "_embedded": {
-                         *     "brotBestandRepresentationList": [...]
-                         *   }
-                         * }
-                         */
+                        // =====================================================
+                        // Unterstützt beide Backend-Formate
+                        // =====================================================
+
                         const products =
                             Array.isArray(
                                 result
@@ -346,10 +348,6 @@ export function BrotBestandManagement() {
                 "brot";
 
 
-            /*
-             * Falls das alte HAL-Backend _links mitgeliefert hat,
-             * sollten diese nicht wieder zurück ans Backend gesendet werden.
-             */
             delete changedData
                 ._links;
 
@@ -378,12 +376,6 @@ export function BrotBestandManagement() {
                 );
 
 
-                /*
-                 * Neu vom Backend laden.
-                 *
-                 * Das Backend kann Werte normalisieren
-                 * oder weitere Felder ergänzen.
-                 */
                 refresh();
             } catch (
                 error
@@ -551,21 +543,30 @@ export function BrotBestandManagement() {
 
     return (
         <Stack
-            spacing={2}
+            spacing={{
+                xs:
+                    1.5,
+
+                sm:
+                    2,
+            }}
             sx={{
                 width:
                     "100%",
 
-                /*
-                 * Genau wie Lager:
-                 * nimmt den verbleibenden Bereich
-                 * im Produktmanagement ein.
-                 */
                 flex:
                     1,
 
                 minHeight:
                     0,
+
+                height: {
+                    xs:
+                        "auto",
+
+                    lg:
+                        "100%",
+                },
 
                 overflow: {
                     xs:
@@ -589,6 +590,31 @@ export function BrotBestandManagement() {
                 <Typography
                     variant="h2"
                     gutterBottom
+                    sx={{
+                        fontSize: {
+                            xs:
+                                "1.5rem",
+
+                            sm:
+                                undefined,
+                        },
+
+                        lineHeight: {
+                            xs:
+                                1.2,
+
+                            sm:
+                                undefined,
+                        },
+
+                        mb: {
+                            xs:
+                                0.5,
+
+                            sm:
+                                1,
+                        },
+                    }}
                 >
                     Brotbestand
                 </Typography>
@@ -597,11 +623,18 @@ export function BrotBestandManagement() {
                 <Typography
                     variant="body1"
                     color="text.secondary"
+                    sx={{
+                        lineHeight: {
+                            xs:
+                                1.45,
+
+                            sm:
+                                1.5,
+                        },
+                    }}
                 >
-                    Brotprodukte, Preise,
-                    Gewichte, Verfügbarkeit
-                    und Allergeninformationen
-                    verwalten.
+                    Brotprodukte, Preise, Gewichte, Verfügbarkeit
+                    und Allergeninformationen verwalten.
                 </Typography>
             </Box>
 
@@ -618,7 +651,7 @@ export function BrotBestandManagement() {
 
                     p: {
                         xs:
-                            1.5,
+                            1.25,
 
                         sm:
                             2,
@@ -629,6 +662,9 @@ export function BrotBestandManagement() {
 
                     borderColor:
                         "divider",
+
+                    borderRadius:
+                        2,
                 }}
             >
                 <Button
@@ -641,6 +677,23 @@ export function BrotBestandManagement() {
                             "NewBrotBestandModal"
                         )
                     }
+                    sx={{
+                        width: {
+                            xs:
+                                "100%",
+
+                            sm:
+                                "auto",
+                        },
+
+                        minHeight: {
+                            xs:
+                                44,
+
+                            sm:
+                                40,
+                        },
+                    }}
                 >
                     Brotprodukt erstellen
                 </Button>
@@ -658,6 +711,9 @@ export function BrotBestandManagement() {
 
                     minHeight:
                         0,
+
+                    width:
+                        "100%",
 
                     display:
                         "flex",
@@ -700,8 +756,7 @@ export function BrotBestandManagement() {
                         <Typography
                             color="text.secondary"
                         >
-                            Brotbestand wird
-                            geladen …
+                            Brotbestand wird geladen …
                         </Typography>
                     </Box>
                 ) : (

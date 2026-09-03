@@ -5,13 +5,20 @@ import {
     Box,
     Button,
     CircularProgress,
+    Collapse,
+    IconButton,
     Paper,
     Stack,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 
 import ShoppingCartCheckoutOutlinedIcon
     from "@mui/icons-material/ShoppingCartCheckoutOutlined";
+
+import ExpandMoreOutlinedIcon
+    from "@mui/icons-material/ExpandMoreOutlined";
 
 import {
     toast,
@@ -45,22 +52,16 @@ function extractCollection(
     result,
     embeddedKey
 ) {
-    if (
-        Array.isArray(result)
-    ) {
+    if (Array.isArray(result)) {
         return result;
     }
-
 
     const embedded =
         result
             ?._embedded
             ?.[embeddedKey];
 
-
-    return Array.isArray(
-        embedded
-    )
+    return Array.isArray(embedded)
         ? embedded
         : [];
 }
@@ -68,24 +69,6 @@ function extractCollection(
 
 // =============================================================================
 // Frischbestand-Request erzeugen
-// =============================================================================
-//
-// Ganz wichtig:
-//
-// Wir verwenden hier absichtlich NICHT:
-//
-//     {
-//         ...product
-//     }
-//
-// Denn dadurch würden alte / zusätzliche Felder aus dem Backend wieder
-// zurückgesendet.
-//
-// Genau darunter kann aktuell noch ein Boolean-Feld mit null liegen.
-//
-// Stattdessen schicken wir nur die Felder, die ein Frischprodukt wirklich
-// benötigt.
-//
 // =============================================================================
 
 function createFrischBestandRequest(
@@ -104,76 +87,47 @@ function createFrischBestandRequest(
             ),
 
         verfuegbarkeit:
-            product.verfuegbarkeit ===
-            true,
+            product.verfuegbarkeit === true,
 
         herkunftsland:
-            product.herkunftsland ??
-            "",
+            product.herkunftsland ?? "",
 
         verband:
-            product.verband ??
-            "",
+            product.verband ?? "",
 
         gebindegroesse:
             Number(
-                product.gebindegroesse ??
-                0
+                product.gebindegroesse ?? 0
             ),
 
         spezialfallBestelleinheit:
-            product
-                .spezialfallBestelleinheit ===
-            true,
+            product.spezialfallBestelleinheit === true,
 
         type:
             "frisch",
-
-
-        // ---------------------------------------------------------------------
-        // Einheit
-        // ---------------------------------------------------------------------
 
         einheit:
             product.einheit
                 ? {
                     id:
-                        product
-                            .einheit
-                            .id,
+                        product.einheit.id,
 
                     name:
-                        product
-                            .einheit
-                            .name ??
-                        "",
+                        product.einheit.name ?? "",
                 }
                 : null,
-
-
-        // ---------------------------------------------------------------------
-        // Kategorie
-        // ---------------------------------------------------------------------
 
         kategorie:
             product.kategorie
                 ? {
                     id:
-                        product
-                            .kategorie
-                            .id,
+                        product.kategorie.id,
 
                     name:
-                        product
-                            .kategorie
-                            .name ??
-                        "",
+                        product.kategorie.name ?? "",
 
                     mixable:
-                        product
-                            .kategorie
-                            .mixable ===
-                        true,
+                        product.kategorie.mixable === true,
                 }
                 : null,
     };
@@ -188,11 +142,29 @@ export function Bestellung() {
     const api =
         useApi();
 
-
     const {
         keycloak,
     } =
         useAuth();
+
+
+    // =========================================================================
+    // Responsive
+    // =========================================================================
+
+    const theme =
+        useTheme();
+
+    const isSmallScreen =
+        useMediaQuery(
+            theme.breakpoints.down("sm")
+        );
+
+    const [
+        mobileInfoOpen,
+        setMobileInfoOpen,
+    ] =
+        React.useState(false);
 
 
     // =========================================================================
@@ -353,13 +325,11 @@ export function Bestellung() {
     ] =
         React.useState([]);
 
-
     const [
         currentOrders,
         setCurrentOrders,
     ] =
         React.useState([]);
-
 
     const [
         previousOrders,
@@ -367,13 +337,11 @@ export function Bestellung() {
     ] =
         React.useState([]);
 
-
     const [
         orderTotals,
         setOrderTotals,
     ] =
         React.useState([]);
-
 
     const [
         amounts,
@@ -381,13 +349,11 @@ export function Bestellung() {
     ] =
         React.useState({});
 
-
     const [
         totalPrice,
         setTotalPrice,
     ] =
         React.useState(0);
-
 
     const [
         isLoading,
@@ -395,13 +361,11 @@ export function Bestellung() {
     ] =
         React.useState(true);
 
-
     const [
         submitting,
         setSubmitting,
     ] =
         React.useState(false);
-
 
     const [
         refreshCounter,
@@ -431,12 +395,9 @@ export function Bestellung() {
             let active =
                 true;
 
-
             const loadData =
                 async () => {
-                    if (
-                        !personId
-                    ) {
+                    if (!personId) {
                         setIsLoading(
                             false
                         );
@@ -444,11 +405,9 @@ export function Bestellung() {
                         return;
                     }
 
-
                     setIsLoading(
                         true
                     );
-
 
                     try {
                         const [
@@ -458,54 +417,75 @@ export function Bestellung() {
                             previousResponse,
                         ] =
                             await Promise.all([
+                                /*
+                                 * Summe aller Mitglieder
+                                 * für die aktuelle Deadline.
+                                 *
+                                 * GET:
+                                 * /frischBestellung/current/menge
+                                 */
                                 api
                                     .readFrischBestellungProProdukt(),
 
+                                /*
+                                 * Aktueller Frischbestand.
+                                 */
                                 api
                                     .readFrischBestand(),
 
+                                /*
+                                 * Eigene Bestellung
+                                 * der aktuellen Deadline.
+                                 *
+                                 * GET:
+                                 * /frischBestellung/current/person/{personId}
+                                 */
                                 api
                                     .readFrischBestellungProPerson(
                                         personId
                                     ),
 
+                                /*
+                                 * Eigene Bestellung
+                                 * der vorherigen Deadline.
+                                 *
+                                 * GET:
+                                 * /frischBestellung/previous/person/{personId}
+                                 */
                                 api
-                                    .readFrischBestellungBetweenDatesProPerson(
+                                    .readFrischBestellungVorherigeProPerson(
                                         personId
                                     ),
                             ]);
 
-
-                        if (
-                            !active
-                        ) {
+                        if (!active) {
                             return;
                         }
 
 
                         // =====================================================
-                        // Gesamtsummen
+                        // Gesamtsummen aktuelle Deadline
                         // =====================================================
 
-                        if (
-                            totalsResponse.ok
-                        ) {
+                        if (totalsResponse.ok) {
                             const result =
                                 await totalsResponse
                                     .json();
 
-
                             setOrderTotals(
                                 extractCollection(
                                     result,
-                                    "frischBestellungRepresentationList"
+                                    "frischBestellSummeRepresentationList"
                                 )
                             );
                         } else {
                             console.error(
                                 "[Bestellung] Bestellsummen:",
-                                totalsResponse
-                                    .status
+                                totalsResponse.status
+                            );
+
+                            setOrderTotals(
+                                []
                             );
                         }
 
@@ -514,13 +494,10 @@ export function Bestellung() {
                         // Frischbestand
                         // =====================================================
 
-                        if (
-                            productsResponse.ok
-                        ) {
+                        if (productsResponse.ok) {
                             const result =
                                 await productsResponse
                                     .json();
-
 
                             setProducts(
                                 extractCollection(
@@ -531,8 +508,11 @@ export function Bestellung() {
                         } else {
                             console.error(
                                 "[Bestellung] Frischbestand:",
-                                productsResponse
-                                    .status
+                                productsResponse.status
+                            );
+
+                            setProducts(
+                                []
                             );
                         }
 
@@ -541,13 +521,10 @@ export function Bestellung() {
                         // Eigene aktuelle Bestellung
                         // =====================================================
 
-                        if (
-                            currentResponse.ok
-                        ) {
+                        if (currentResponse.ok) {
                             const result =
                                 await currentResponse
                                     .json();
-
 
                             setCurrentOrders(
                                 extractCollection(
@@ -558,23 +535,23 @@ export function Bestellung() {
                         } else {
                             console.error(
                                 "[Bestellung] Aktuelle Bestellung:",
-                                currentResponse
-                                    .status
+                                currentResponse.status
+                            );
+
+                            setCurrentOrders(
+                                []
                             );
                         }
 
 
                         // =====================================================
-                        // Vorwoche
+                        // Vorherige Bestellrunde
                         // =====================================================
 
-                        if (
-                            previousResponse.ok
-                        ) {
+                        if (previousResponse.ok) {
                             const result =
                                 await previousResponse
                                     .json();
-
 
                             setPreviousOrders(
                                 extractCollection(
@@ -584,27 +561,25 @@ export function Bestellung() {
                             );
                         } else {
                             console.error(
-                                "[Bestellung] Vorwochenbestellung:",
-                                previousResponse
-                                    .status
+                                "[Bestellung] Vorherige Bestellung:",
+                                previousResponse.status
+                            );
+
+                            setPreviousOrders(
+                                []
                             );
                         }
-                    } catch (
-                        error
-                    ) {
+                    } catch (error) {
                         console.error(
                             "Fehler beim Laden der Frischbestellung:",
                             error
                         );
 
-
                         toast.error(
                             "Die Frischbestellung konnte nicht vollständig geladen werden."
                         );
                     } finally {
-                        if (
-                            active
-                        ) {
+                        if (active) {
                             setIsLoading(
                                 false
                             );
@@ -612,9 +587,7 @@ export function Bestellung() {
                     }
                 };
 
-
             loadData();
-
 
             return () => {
                 active =
@@ -642,8 +615,7 @@ export function Bestellung() {
                             order =>
                                 order
                                     ?.frischbestand
-                                    ?.id !=
-                                null
+                                    ?.id != null
                         )
                         .map(
                             order => [
@@ -664,7 +636,7 @@ export function Bestellung() {
 
 
     // =========================================================================
-    // Vorwoche nach Produkt
+    // Vorherige Bestellrunde nach Produkt
     // =========================================================================
 
     const previousOrdersByProduct =
@@ -676,8 +648,7 @@ export function Bestellung() {
                             order =>
                                 order
                                     ?.frischbestand
-                                    ?.id !=
-                                null
+                                    ?.id != null
                         )
                         .map(
                             order => [
@@ -698,7 +669,7 @@ export function Bestellung() {
 
 
     // =========================================================================
-    // Gesamtsumme nach Produkt
+    // Gesamtsumme aktuelle Deadline nach Produkt
     // =========================================================================
 
     const totalsByProduct =
@@ -710,8 +681,7 @@ export function Bestellung() {
                             order =>
                                 order
                                     ?.frischbestand
-                                    ?.id !=
-                                null
+                                    ?.id != null
                         )
                         .map(
                             order => [
@@ -745,10 +715,13 @@ export function Bestellung() {
                                 product.id
                             );
 
-
                         return {
                             ...product,
 
+                            /*
+                             * Alle Mitglieder
+                             * in der aktuellen Bestellrunde.
+                             */
                             bestellsumme:
                                 Number(
                                     totalsByProduct
@@ -757,6 +730,9 @@ export function Bestellung() {
                                     0
                                 ),
 
+                            /*
+                             * Eigene aktuelle Bestellung.
+                             */
                             bestellmengeNeu:
                                 Number(
                                     currentOrdersByProduct
@@ -765,6 +741,10 @@ export function Bestellung() {
                                     0
                                 ),
 
+                            /*
+                             * Eigene Bestellung
+                             * aus der vorherigen Deadline.
+                             */
                             bestellmengeAlt:
                                 previousOrdersByProduct
                                     .get(id)
@@ -788,19 +768,13 @@ export function Bestellung() {
 
     const submitBestellung =
         async () => {
-            if (
-                !personId
-            ) {
+            if (!personId) {
                 toast.error(
                     "Der Benutzer konnte nicht ermittelt werden."
                 );
 
                 return;
             }
-
-
-            // Nur Produkte berücksichtigen,
-            // bei denen tatsächlich etwas eingegeben wurde.
 
             const changedProducts =
                 products.filter(
@@ -816,7 +790,6 @@ export function Bestellung() {
                         ] !== ""
                 );
 
-
             if (
                 changedProducts.length ===
                 0
@@ -828,16 +801,13 @@ export function Bestellung() {
                 return;
             }
 
-
             setSubmitting(
                 true
             );
 
-
             try {
                 const calls =
                     [];
-
 
                 for (
                     const product
@@ -850,11 +820,6 @@ export function Bestellung() {
                             ]
                         );
 
-
-                    // =========================================================
-                    // Eingabe prüfen
-                    // =========================================================
-
                     if (
                         Number.isNaN(
                             amount
@@ -865,7 +830,6 @@ export function Bestellung() {
                             `Ungültige Bestellmenge für "${product.name}".`
                         );
                     }
-
 
                     const existing =
                         currentOrdersByProduct
@@ -920,6 +884,23 @@ export function Bestellung() {
                     // =========================================================
                     // Bestellung
                     // =========================================================
+                    //
+                    // WICHTIG:
+                    //
+                    // datum und deadline werden NICHT mehr vom Frontend
+                    // festgelegt.
+                    //
+                    // Das Backend entscheidet:
+                    //
+                    // CREATE:
+                    //   datum = LocalDateTime.now()
+                    //   deadline = aktuelle Deadline
+                    //
+                    // UPDATE:
+                    //   altes datum bleibt
+                    //   alte deadline bleibt
+                    //
+                    // =========================================================
 
                     const order = {
                         personId,
@@ -929,17 +910,12 @@ export function Bestellung() {
                         bestellmenge:
                             amount,
 
-                        datum:
-                            new Date()
-                                .toISOString(),
-
                         done:
                             false,
 
                         type:
                             "frisch",
                     };
-
 
                     console.log(
                         "[Bestellung] Request JSON:",
@@ -955,9 +931,7 @@ export function Bestellung() {
                     // Update
                     // =========================================================
 
-                    if (
-                        existing
-                    ) {
+                    if (existing) {
                         calls.push(
                             api
                                 .updateFrischBestellung(
@@ -995,16 +969,13 @@ export function Bestellung() {
                         "Es waren keine Änderungen zu speichern."
                     );
 
-
                     setAmounts(
                         {}
                     );
 
-
                     setTotalPrice(
                         0
                     );
-
 
                     return;
                 }
@@ -1018,7 +989,6 @@ export function Bestellung() {
                     await Promise.all(
                         calls
                     );
-
 
                 const failedResponses =
                     responses.filter(
@@ -1042,7 +1012,6 @@ export function Bestellung() {
                         let text =
                             "";
 
-
                         try {
                             text =
                                 await response
@@ -1051,14 +1020,12 @@ export function Bestellung() {
                             // keine weitere Aktion
                         }
 
-
                         console.error(
                             "[Bestellung] Backendfehler:",
                             response.status,
                             text
                         );
                     }
-
 
                     toast.error(
                         "Die Bestellung konnte nicht vollständig gespeichert werden."
@@ -1076,26 +1043,27 @@ export function Bestellung() {
                     "Deine Bestellung wurde erfolgreich gespeichert."
                 );
 
-
                 setAmounts(
                     {}
                 );
-
 
                 setTotalPrice(
                     0
                 );
 
-
+                /*
+                 * Danach neu laden:
+                 *
+                 * - aktuelle eigene Bestellung
+                 * - Summe aller Mitglieder
+                 * - vorherige Bestellrunde
+                 */
                 refresh();
-            } catch (
-                error
-            ) {
+            } catch (error) {
                 console.error(
                     "[Bestellung] Fehler beim Speichern:",
                     error
                 );
-
 
                 toast.error(
                     error?.message ??
@@ -1118,27 +1086,26 @@ export function Bestellung() {
             sx={{
                 flex: 1,
                 minHeight: 0,
-
-                display:
-                    "flex",
-
-                flexDirection:
-                    "column",
-
-                overflow:
-                    "hidden",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
             }}
         >
             <Stack
-                spacing={2}
+                spacing={{
+                    xs: 1,
+                    sm: 2,
+                }}
                 sx={{
                     flex: 1,
                     minHeight: 0,
-
-                    overflow:
-                        "hidden",
+                    overflow: "hidden",
                 }}
             >
+                {/* ========================================================= */}
+                {/* Deadline                                                  */}
+                {/* ========================================================= */}
+
                 <Box
                     sx={{
                         flexShrink: 0,
@@ -1148,56 +1115,149 @@ export function Bestellung() {
                 </Box>
 
 
-                <Alert
-                    severity="info"
-                    sx={{
-                        flexShrink: 0,
-                    }}
-                >
-                    Deine aktuelle Bestellmenge kannst du ändern,
-                    indem du eine neue Menge einträgst und anschließend
-                    die Bestellung bestätigst. Mit einer Menge von 0
-                    wird eine bestehende Bestellung gelöscht.
-                </Alert>
+                {/* ========================================================= */}
+                {/* Info                                                      */}
+                {/* ========================================================= */}
 
+                {isSmallScreen ? (
+                    <Alert
+                        severity="info"
+                        sx={{
+                            flexShrink: 0,
+
+                            py: 0,
+
+                            "& .MuiAlert-icon": {
+                                py: 0.75,
+                                mr: 1,
+                            },
+
+                            "& .MuiAlert-message": {
+                                width: "100%",
+                                minWidth: 0,
+                                py: 0.75,
+                            },
+
+                            "& .MuiAlert-action": {
+                                alignItems: "flex-start",
+                                pt: 0.25,
+                                pb: 0.25,
+                                pr: 0.5,
+                            },
+                        }}
+                        action={
+                            <IconButton
+                                size="small"
+                                color="inherit"
+                                aria-label={
+                                    mobileInfoOpen
+                                        ? "Hinweis einklappen"
+                                        : "Hinweis ausklappen"
+                                }
+                                aria-expanded={
+                                    mobileInfoOpen
+                                }
+                                onClick={
+                                    () =>
+                                        setMobileInfoOpen(
+                                            value =>
+                                                !value
+                                        )
+                                }
+                            >
+                                <ExpandMoreOutlinedIcon
+                                    sx={{
+                                        transition:
+                                            theme.transitions
+                                                .create(
+                                                    "transform",
+                                                    {
+                                                        duration:
+                                                            theme
+                                                                .transitions
+                                                                .duration
+                                                                .shortest,
+                                                    }
+                                                ),
+
+                                        transform:
+                                            mobileInfoOpen
+                                                ? "rotate(180deg)"
+                                                : "rotate(0deg)",
+                                    }}
+                                />
+                            </IconButton>
+                        }
+                    >
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                        >
+                            Hinweis zur Bestellung
+                        </Typography>
+
+                        <Collapse
+                            in={
+                                mobileInfoOpen
+                            }
+                            timeout="auto"
+                            unmountOnExit
+                        >
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    pt: 0.75,
+                                    pr: 0.5,
+                                }}
+                            >
+                                Deine aktuelle Bestellmenge kannst du ändern,
+                                indem du eine neue Menge einträgst und
+                                anschließend die Bestellung bestätigst.
+                                Mit einer Menge von 0 wird eine bestehende
+                                Bestellung gelöscht.
+                            </Typography>
+                        </Collapse>
+                    </Alert>
+                ) : (
+                    <Alert
+                        severity="info"
+                        sx={{
+                            flexShrink: 0,
+                        }}
+                    >
+                        Deine aktuelle Bestellmenge kannst du ändern,
+                        indem du eine neue Menge einträgst und anschließend
+                        die Bestellung bestätigst. Mit einer Menge von 0
+                        wird eine bestehende Bestellung gelöscht.
+                    </Alert>
+                )}
+
+
+                {/* ========================================================= */}
+                {/* Tabelle                                                   */}
+                {/* ========================================================= */}
 
                 <Box
                     sx={{
                         flex: 1,
                         minHeight: 0,
-
-                        display:
-                            "flex",
-
-                        flexDirection:
-                            "column",
-
-                        overflow:
-                            "hidden",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden",
                     }}
                 >
                     {isLoading ? (
                         <Box
                             sx={{
                                 flex: 1,
-
-                                display:
-                                    "flex",
-
-                                flexDirection:
-                                    "column",
-
-                                alignItems:
-                                    "center",
-
-                                justifyContent:
-                                    "center",
-
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
                                 gap: 2,
                             }}
                         >
                             <CircularProgress />
-
 
                             <Typography>
                                 Frischprodukte werden geladen …
@@ -1225,23 +1285,31 @@ export function Bestellung() {
                 </Box>
 
 
+                {/* ========================================================= */}
+                {/* Bestellen                                                 */}
+                {/* ========================================================= */}
+
                 <Paper
                     elevation={0}
                     sx={{
                         flexShrink: 0,
 
                         border: 1,
+
                         borderColor:
                             "divider",
 
                         p: {
-                            xs: 1.5,
+                            xs: 1,
                             sm: 2,
                         },
                     }}
                 >
                     <Stack
-                        spacing={1.5}
+                        spacing={{
+                            xs: 1,
+                            sm: 1.5,
+                        }}
                         alignItems="flex-start"
                     >
                         <Stack
@@ -1255,7 +1323,6 @@ export function Bestellung() {
                             >
                                 Preis
                             </Typography>
-
 
                             <Typography
                                 variant="h5"
@@ -1277,10 +1344,13 @@ export function Bestellung() {
                             </Typography>
                         </Stack>
 
-
                         <Button
                             variant="contained"
-                            size="large"
+                            size={
+                                isSmallScreen
+                                    ? "medium"
+                                    : "large"
+                            }
                             startIcon={
                                 <ShoppingCartCheckoutOutlinedIcon />
                             }
@@ -1295,14 +1365,14 @@ export function Bestellung() {
                                 alignSelf:
                                     "flex-start",
 
-                                width:
-                                    "auto",
+                                width: {
+                                    xs: "100%",
+                                    sm: "auto",
+                                },
 
                                 minWidth: {
-                                    xs:
-                                        280,
-                                    sm:
-                                        320,
+                                    xs: 0,
+                                    sm: 320,
                                 },
 
                                 maxWidth:

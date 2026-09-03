@@ -23,6 +23,8 @@ import {
     TextField,
     Tooltip,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 
 import HistoryOutlinedIcon
@@ -47,6 +49,19 @@ export function BestellungTable({
 
 
     // =========================================================================
+    // Responsive
+    // =========================================================================
+
+    const theme =
+        useTheme();
+
+    const isSmallScreen =
+        useMediaQuery(
+            theme.breakpoints.down("sm")
+        );
+
+
+    // =========================================================================
     // Preis
     // =========================================================================
 
@@ -66,13 +81,11 @@ export function BestellungTable({
                                 0
                             );
 
-
                         const price =
                             Number(
                                 product.preis ??
                                 0
                             );
-
 
                         return (
                             total +
@@ -111,7 +124,6 @@ export function BestellungTable({
             const values =
                 {};
 
-
             data.forEach(
                 product => {
                     if (
@@ -125,7 +137,6 @@ export function BestellungTable({
                     }
                 }
             );
-
 
             onAmountsChange?.(
                 values
@@ -159,30 +170,31 @@ export function BestellungTable({
 
     return (
         <Stack
-            spacing={
-                1.5
-            }
+            spacing={{
+                xs: 0.75,
+                sm: 1.5,
+            }}
             sx={{
-                flex:
-                    1,
-
-                minHeight:
-                    0,
-
-                overflow:
-                    "hidden",
+                flex: 1,
+                minHeight: 0,
+                overflow: "hidden",
             }}
         >
+            {/* ============================================================= */}
+            {/* Vorwoche                                                      */}
+            {/* ============================================================= */}
+
             <Stack
                 direction="row"
-                spacing={
-                    1
-                }
-                justifyContent="flex-end"
+                spacing={1}
                 alignItems="center"
                 sx={{
-                    flexShrink:
-                        0,
+                    flexShrink: 0,
+
+                    justifyContent: {
+                        xs: "space-between",
+                        sm: "flex-end",
+                    },
                 }}
             >
                 <Tooltip
@@ -190,13 +202,10 @@ export function BestellungTable({
                     title={
                         <Box>
                             <Typography
-                                fontWeight={
-                                    700
-                                }
+                                fontWeight={700}
                             >
                                 Bestellung der Vorwoche
                             </Typography>
-
 
                             <Typography
                                 variant="body2"
@@ -207,45 +216,59 @@ export function BestellungTable({
                         </Box>
                     }
                 >
-                    <IconButton>
+                    <IconButton
+                        size={
+                            isSmallScreen
+                                ? "small"
+                                : "medium"
+                        }
+                    >
                         <HelpOutlinedIcon />
                     </IconButton>
                 </Tooltip>
 
-
                 <Button
                     variant="outlined"
+                    size={
+                        isSmallScreen
+                            ? "small"
+                            : "medium"
+                    }
                     startIcon={
                         <HistoryOutlinedIcon />
                     }
                     onClick={
                         loadPreviousWeek
                     }
+                    sx={{
+                        whiteSpace:
+                            "nowrap",
+                    }}
                 >
-                    Bestellmenge Vorwoche laden
+                    {
+                        isSmallScreen
+                            ? "Vorwoche laden"
+                            : "Bestellmenge Vorwoche laden"
+                    }
                 </Button>
             </Stack>
 
+
+            {/* ============================================================= */}
+            {/* Tabelle                                                       */}
+            {/* ============================================================= */}
 
             <TableContainer
                 component={
                     Paper
                 }
-                elevation={
-                    0
-                }
+                elevation={0}
                 sx={{
-                    flex:
-                        1,
+                    flex: 1,
+                    minHeight: 0,
+                    width: "100%",
 
-                    minHeight:
-                        0,
-
-                    width:
-                        "100%",
-
-                    border:
-                        1,
+                    border: 1,
 
                     borderColor:
                         "divider",
@@ -255,6 +278,9 @@ export function BestellungTable({
 
                     overflow:
                         "auto",
+
+                    WebkitOverflowScrolling:
+                        "touch",
                 }}
             >
                 <Table
@@ -265,6 +291,10 @@ export function BestellungTable({
                             1200,
                     }}
                 >
+                    {/* ===================================================== */}
+                    {/* Header                                                */}
+                    {/* ===================================================== */}
+
                     <TableHead>
                         {table
                             .getHeaderGroups()
@@ -278,9 +308,16 @@ export function BestellungTable({
                                         {headerGroup.headers.map(
                                             header => {
                                                 const sorted =
-                                                    header.column
+                                                    header
+                                                        .column
                                                         .getIsSorted();
 
+                                                const stickyProduct =
+                                                    isSmallScreen &&
+                                                    header
+                                                        .column
+                                                        .id ===
+                                                        "name";
 
                                                 return (
                                                     <TableCell
@@ -293,9 +330,29 @@ export function BestellungTable({
 
                                                             bgcolor:
                                                                 "background.paper",
+
+                                                            ...(stickyProduct
+                                                                ? {
+                                                                    position:
+                                                                        "sticky",
+
+                                                                    left:
+                                                                        0,
+
+                                                                    zIndex:
+                                                                        4,
+
+                                                                    borderRight:
+                                                                        1,
+
+                                                                    borderRightColor:
+                                                                        "divider",
+                                                                }
+                                                                : {}),
                                                         }}
                                                     >
-                                                        {header.column
+                                                        {header
+                                                            .column
                                                             .getCanSort() ? (
                                                             <TableSortLabel
                                                                 active={
@@ -310,7 +367,8 @@ export function BestellungTable({
                                                                         : "asc"
                                                                 }
                                                                 onClick={
-                                                                    header.column
+                                                                    header
+                                                                        .column
                                                                         .getToggleSortingHandler()
                                                                 }
                                                             >
@@ -345,6 +403,10 @@ export function BestellungTable({
                     </TableHead>
 
 
+                    {/* ===================================================== */}
+                    {/* Body                                                  */}
+                    {/* ===================================================== */}
+
                     <TableBody>
                         {table
                             .getRowModel()
@@ -354,11 +416,9 @@ export function BestellungTable({
                                     const product =
                                         row.original;
 
-
                                     const unavailable =
                                         product.verfuegbarkeit ===
                                         false;
-
 
                                     return (
                                         <TableRow
@@ -377,6 +437,18 @@ export function BestellungTable({
                                                 .getVisibleCells()
                                                 .map(
                                                     cell => {
+                                                        const stickyProduct =
+                                                            isSmallScreen &&
+                                                            cell
+                                                                .column
+                                                                .id ===
+                                                                "name";
+
+
+                                                        // =================================================
+                                                        // Bestellmenge
+                                                        // =================================================
+
                                                         if (
                                                             cell
                                                                 .column
@@ -446,11 +518,38 @@ export function BestellungTable({
                                                         }
 
 
+                                                        // =================================================
+                                                        // Normale Zelle
+                                                        // =================================================
+
                                                         return (
                                                             <TableCell
                                                                 key={
                                                                     cell.id
                                                                 }
+                                                                sx={{
+                                                                    ...(stickyProduct
+                                                                        ? {
+                                                                            position:
+                                                                                "sticky",
+
+                                                                            left:
+                                                                                0,
+
+                                                                            zIndex:
+                                                                                1,
+
+                                                                            bgcolor:
+                                                                                "background.paper",
+
+                                                                            borderRight:
+                                                                                1,
+
+                                                                            borderRightColor:
+                                                                                "divider",
+                                                                        }
+                                                                        : {}),
+                                                                }}
                                                             >
                                                                 {flexRender(
                                                                     cell
@@ -471,6 +570,10 @@ export function BestellungTable({
                             )}
 
 
+                        {/* ================================================= */}
+                        {/* Keine Produkte                                    */}
+                        {/* ================================================= */}
+
                         {table
                             .getRowModel()
                             .rows
@@ -483,8 +586,7 @@ export function BestellungTable({
                                     }
                                     align="center"
                                     sx={{
-                                        py:
-                                            6,
+                                        py: 6,
 
                                         color:
                                             "text.secondary",

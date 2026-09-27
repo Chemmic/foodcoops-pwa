@@ -30,9 +30,10 @@ ENV VITE_KEYCLOAK_ORGANISATOR_ROLE=${VITE_KEYCLOAK_ORGANISATOR_ROLE}
 # Dependencies
 # -----------------------------------------------------------------------------
 
-COPY package*.json ./
+# Genau die Versionen aus package-lock.json (reproduzierbar)
+COPY package.json package-lock.json .npmrc ./
 
-RUN npm install
+RUN npm ci
 
 
 # -----------------------------------------------------------------------------

@@ -25,11 +25,9 @@ const anzeige = liste =>
 
 
 describe("Sichtbare Bereiche", () => {
-    it("zeigt ohne Anmeldung nur Start und gesperrte Bestellung / Einkauf", () => {
+    it("zeigt ohne Anmeldung nur Start", () => {
         expect(anzeige(sichtbareBereiche(false, mitRollen(ADMIN_ROLE)))).toEqual([
             "start",
-            "bestellung (gesperrt)",
-            "einkauf (gesperrt)",
         ]);
     });
 

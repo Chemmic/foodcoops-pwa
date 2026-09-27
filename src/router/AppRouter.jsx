@@ -532,10 +532,21 @@ if (
 
             const sperrHinweis =
                 item.gesperrt
-                    ? authenticated
-                        ? `Nur mit der Rolle „${benoetigteRollen(item.rollen).join(" oder ")}“`
-                        : "Bitte zuerst anmelden"
+                    ? `Nur mit der Rolle „${benoetigteRollen(item.rollen).join(" oder ")}“`
                     : undefined;
+
+            // Gesperrt: sichtbar, aber kein Link (Hinweis beim Drüberfahren)
+            const linkProps =
+                item.gesperrt
+                    ? {
+                        component: "div",
+                        "aria-disabled": true,
+                        disableRipple: true,
+                    }
+                    : {
+                        component: Link,
+                        to: item.path,
+                    };
 
 
             return (
@@ -543,12 +554,7 @@ if (
                     key={
                         item.path
                     }
-                    component={
-                        Link
-                    }
-                    to={
-                        item.path
-                    }
+                    {...linkProps}
                     selected={
                         active
                     }
@@ -556,10 +562,13 @@ if (
                         sperrHinweis
                     }
                     sx={{
-                        opacity:
-                            item.gesperrt
-                                ? 0.6
-                                : 1,
+                        ...(item.gesperrt && {
+                            opacity: 0.55,
+                            cursor: "not-allowed",
+                            "&:hover": {
+                                bgcolor: "transparent",
+                            },
+                        }),
 
                         mx:
                             1.5,

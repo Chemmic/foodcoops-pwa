@@ -15,7 +15,8 @@ import {
  *
  *   Home, Impressum            jeder
  *   Mein Profil                angemeldet
- *   Bestellung, Einkauf        Einkäufer   (immer sichtbar, sonst gesperrt)
+ *   Bestellung, Einkauf        Einkäufer   (angemeldet immer sichtbar,
+ *                                           sonst gesperrt/nicht klickbar)
  *   Produkt-Management         Organisator
  *   Konfiguration              Einkaufsmanagement, Organisator
  *     Einstellungen, Deadline  nur Admin
@@ -36,7 +37,7 @@ export const RECHTE = {
 };
 
 
-/** Bereiche, die auch ohne Rolle in der Navigation stehen (dann gesperrt). */
+/** Bereiche, die angemeldet auch ohne Rolle in der Navigation stehen (dann gesperrt). */
 const IMMER_SICHTBAR = [
     "bestellung",
     "einkauf",
@@ -72,10 +73,12 @@ export const sichtbareBereiche = (angemeldet, darf) =>
             return angemeldet ? [{ bereich, gesperrt: false }] : [];
         }
 
-        const erlaubt =
-            angemeldet && darf(RECHTE[bereich]);
+        // Ohne Anmeldung nur Start (und Impressum)
+        if (!angemeldet) {
+            return [];
+        }
 
-        if (erlaubt) {
+        if (darf(RECHTE[bereich])) {
             return [{ bereich, gesperrt: false }];
         }
 

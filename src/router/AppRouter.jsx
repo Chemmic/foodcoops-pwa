@@ -73,6 +73,9 @@ import ZoomInOutlinedIcon
 import ZoomOutOutlinedIcon
     from "@mui/icons-material/ZoomOutOutlined";
 
+import LockOutlinedIcon
+    from "@mui/icons-material/LockOutlined";
+
 import {
     About,
 } from "../About.jsx";
@@ -110,9 +113,10 @@ import {
 } from "../auth/AuthContext.jsx";
 
 import {
-    ADMIN_ROLE,
-    ORGANISATOR_ROLE,
-} from "../auth/roles.js";
+    RECHTE,
+    benoetigteRollen,
+    sichtbareBereiche,
+} from "../auth/rechte.js";
 
 import {
     Organisation,
@@ -151,6 +155,53 @@ function AlteUrlWeiterleitung() {
 const DRAWER_WIDTH = 270;
 
 
+/** Einträge der Hauptnavigation – was sichtbar ist, legt auth/rechte.js fest. */
+const NAVIGATION_EINTRAEGE = {
+    start: {
+        label: "Home",
+        path: PFADE.start,
+        icon: <HomeOutlinedIcon />,
+    },
+    profil: {
+        label: "Mein Profil",
+        path: PFADE.profil,
+        icon: <AccountCircleOutlinedIcon />,
+    },
+    bestellung: {
+        label: "Bestellung",
+        path: PFADE.bestellung,
+        icon: <AddShoppingCartOutlinedIcon />,
+        rollen: RECHTE.bestellung,
+    },
+    einkauf: {
+        label: "Einkauf",
+        path: PFADE.einkauf,
+        icon: <ShoppingCartOutlinedIcon />,
+        rollen: RECHTE.einkauf,
+    },
+    produkte: {
+        label: "Produkt-Management",
+        path: PFADE.produkte,
+        icon: <Inventory2OutlinedIcon />,
+    },
+    konfiguration: {
+        label: "Konfiguration",
+        path: PFADE.konfiguration,
+        icon: <SettingsOutlinedIcon />,
+    },
+    organisation: {
+        label: "Organisation",
+        path: PFADE.organisation,
+        icon: <FactCheckOutlinedIcon />,
+    },
+    verwaltung: {
+        label: "Verwaltung",
+        path: PFADE.verwaltung,
+        icon: <AdminPanelSettingsOutlinedIcon />,
+    },
+};
+
+
 // =============================================================================
 // Router
 // =============================================================================
@@ -187,19 +238,8 @@ const AppContent = () => {
     const {
         keycloak,
         authenticated,
-        hasRole,
+        hasRoles,
     } = useAuth();
-
-    const isAdmin =
-        hasRole(
-            ADMIN_ROLE
-        );
-
-    const isOrganisator =
-        isAdmin ||
-        hasRole(
-            ORGANISATOR_ROLE
-        );
 
 
     const [
@@ -318,101 +358,20 @@ const AppContent = () => {
     // Navigation
     // =========================================================================
 
+    // Nur Bereiche mit Rechten; Bestellung / Einkauf immer (sonst gesperrt)
     const navigationItems =
         useMemo(
-            () => [
-                {
-                    label:
-                        "Home",
-
-                    path:
-                        PFADE.start,
-
-                    icon:
-                        <HomeOutlinedIcon />,
-                },
-                {
-                label:
-                    "Mein Profil",
-
-                path:
-                    PFADE.profil,
-
-                icon:
-                    <AccountCircleOutlinedIcon />,
-            },
-                {
-                    label:
-                        "Bestellung",
-
-                    path:
-                        PFADE.bestellung,
-
-                    icon:
-                        <AddShoppingCartOutlinedIcon />,
-                },
-                {
-                    label:
-                        "Einkauf",
-
-                    path:
-                        PFADE.einkauf,
-
-                    icon:
-                        <ShoppingCartOutlinedIcon />,
-                },
-                {
-                    label:
-                        "Produkt-Management",
-
-                    path:
-                        PFADE.produkte,
-
-                    icon:
-                        <Inventory2OutlinedIcon />,
-                },
-                {
-                    label:
-                        "Konfiguration",
-
-                    path:
-                        PFADE.konfiguration,
-
-                    icon:
-                        <SettingsOutlinedIcon />,
-                },
-                ...(isOrganisator
-                    ? [
-                        {
-                            label:
-                                "Organisation",
-
-                            path:
-                                PFADE.organisation,
-
-                            icon:
-                                <FactCheckOutlinedIcon />,
-                        },
-                    ]
-                    : []),
-                ...(isAdmin
-                    ? [
-                        {
-                            label:
-                                "Verwaltung",
-
-                            path:
-                                PFADE.verwaltung,
-
-                            icon:
-                                <AdminPanelSettingsOutlinedIcon />,
-                        },
-                    ]
-                    : []),
-            ],
+            () =>
+                sichtbareBereiche(
+                    authenticated,
+                    hasRoles
+                ).map(({ bereich, gesperrt }) => ({
+                    ...NAVIGATION_EINTRAEGE[bereich],
+                    gesperrt,
+                })),
             [
-                isAdmin,
-                isOrganisator,
+                authenticated,
+                hasRoles,
             ]
         );
 
@@ -571,6 +530,13 @@ if (
                     item.path
                 );
 
+            const sperrHinweis =
+                item.gesperrt
+                    ? authenticated
+                        ? `Nur mit der Rolle „${benoetigteRollen(item.rollen).join(" oder ")}“`
+                        : "Bitte zuerst anmelden"
+                    : undefined;
+
 
             return (
                 <ListItemButton
@@ -586,7 +552,15 @@ if (
                     selected={
                         active
                     }
+                    title={
+                        sperrHinweis
+                    }
                     sx={{
+                        opacity:
+                            item.gesperrt
+                                ? 0.6
+                                : 1,
+
                         mx:
                             1.5,
 
@@ -635,6 +609,19 @@ if (
                             },
                         }}
                     />
+
+                    {item.gesperrt && (
+                        <LockOutlinedIcon
+                            fontSize="small"
+                            titleAccess={
+                                sperrHinweis
+                            }
+                            sx={{
+                                color:
+                                    "text.disabled",
+                            }}
+                        />
+                    )}
                 </ListItemButton>
             );
         };
@@ -745,17 +732,17 @@ if (
                         2,
                 }}
             >
-                {authenticated ? (
-                    <List
-                        disablePadding
-                    >
-                        {
-                            navigationItems.map(
-                                renderNavigationItem
-                            )
-                        }
-                    </List>
-                ) : (
+                <List
+                    disablePadding
+                >
+                    {
+                        navigationItems.map(
+                            renderNavigationItem
+                        )
+                    }
+                </List>
+
+                {!authenticated && (
                     <Box
                         sx={{
                             px:
@@ -1319,9 +1306,7 @@ if (
                             path={`${PFADE.bestellung}/*`}
                             element={
                                 <PrivateRoute
-                                    roles={[
-                                        "Einkäufer",
-                                    ]}
+                                    roles={RECHTE.bestellung}
                                 >
                                     <MainBestellung />
                                 </PrivateRoute>
@@ -1337,9 +1322,7 @@ if (
                             path={`${PFADE.einkauf}/*`}
                             element={
                                 <PrivateRoute
-                                    roles={[
-                                        "Einkäufer",
-                                    ]}
+                                    roles={RECHTE.einkauf}
                                 >
                                     <MainEinkauf
                                         isLarge={
@@ -1359,9 +1342,7 @@ if (
                             path={`${PFADE.produkte}/*`}
                             element={
                                 <PrivateRoute
-                                    roles={[
-                                        "Einkäufer",
-                                    ]}
+                                    roles={RECHTE.produkte}
                                 >
                                     <MainManagement />
                                 </PrivateRoute>
@@ -1377,10 +1358,7 @@ if (
                             path={`${PFADE.konfiguration}/*`}
                             element={
                                 <PrivateRoute
-                                    roles={[
-                                        "Einkäufer",
-                                        ADMIN_ROLE,
-                                    ]}
+                                    roles={RECHTE.konfiguration}
                                 >
                                     <MainAdmin />
                                 </PrivateRoute>
@@ -1396,10 +1374,7 @@ if (
                             path={`${PFADE.organisation}/*`}
                             element={
                                 <PrivateRoute
-                                    roles={[
-                                        ORGANISATOR_ROLE,
-                                        ADMIN_ROLE,
-                                    ]}
+                                    roles={RECHTE.organisation}
                                 >
                                     <Organisation />
                                 </PrivateRoute>
@@ -1415,9 +1390,7 @@ if (
                             path={`${PFADE.verwaltung}/*`}
                             element={
                                 <PrivateRoute
-                                    roles={[
-                                        ADMIN_ROLE,
-                                    ]}
+                                    roles={RECHTE.verwaltung}
                                 >
                                     <Verwaltung />
                                 </PrivateRoute>

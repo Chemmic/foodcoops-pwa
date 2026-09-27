@@ -29,6 +29,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 
 import { PasswortFeld } from "./PasswortFeld.jsx";
+import { EINKAEUFER_ROLE } from "../../auth/roles.js";
 import {
     OhneRolleHilfe,
     RollenHilfe,
@@ -139,6 +140,11 @@ export function BenutzerDialog({
                     ...EMPTY_FORM,
                     password:
                         generatePassword(),
+                    // Neue Mitglieder dürfen standardmäßig bestellen und einkaufen
+                    roles:
+                        roles.some(role => role.name === EINKAEUFER_ROLE)
+                            ? [EINKAEUFER_ROLE]
+                            : [],
                 }
         );
     }, [

@@ -27,3 +27,11 @@ export const ORGANISATOR_ROLE =
     import.meta.env
         .VITE_KEYCLOAK_ORGANISATOR_ROLE ||
     "Organisator";
+
+
+/**
+ * Sieht in der Konfiguration Zu viel / zu wenig, Bestellübersicht und PDFs
+ * und bekommt nach jedem Einkauf eine E-Mail mit der Kostenübersicht.
+ */
+export const EINKAUFSMANAGEMENT_ROLE =
+    "Einkaufsmanagement";

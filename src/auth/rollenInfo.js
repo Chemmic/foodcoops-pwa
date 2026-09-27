@@ -1,6 +1,7 @@
 import {
     ADMIN_ROLE,
     EINKAEUFER_ROLE,
+    EINKAUFSMANAGEMENT_ROLE,
     ORGANISATOR_ROLE,
 } from "./roles.js";
 
@@ -10,8 +11,8 @@ import {
  * Was darf welche Rolle?
  * ============================================================================
  *
- * Für die Hilfe bei der Rollenvergabe. Muss zu den Rollen-Prüfungen im
- * Router (AppRouter.jsx) und im Backend (SecurityConfiguration) passen.
+ * Für die Hilfe bei der Rollenvergabe. Muss zu auth/rechte.js und zum
+ * Backend (SecurityConfiguration) passen.
  */
 
 /** Was jede angemeldete Person sieht – auch ganz ohne Rolle. */
@@ -28,36 +29,36 @@ const INFOS = {
         bereiche: [
             "Bestellung (Frisch und Brot)",
             "Einkauf (Bestellungen abholen, Lagerware, Zu viel)",
-            "Produkte (Lager, Frisch- und Brot-Sortiment verwalten)",
-            "Konfiguration (Zu viel / zu wenig, Bestellübersicht, PDFs, Einstellungen, Deadline)",
         ],
     },
 
     [ORGANISATOR_ROLE]: {
-        kurz: "Legt fest, was beim Händler bestellt wird.",
+        kurz: "Kümmert sich um Sortiment und Bestellung beim Händler.",
         bereiche: [
             "Organisation → Bestellung beim Händler (Gebinde festlegen, Produkte ergänzen, PDF)",
             "Organisation → Lager auffüllen (Einkaufsliste)",
+            "Produkt-Management (Lager, Frisch- und Brot-Sortiment)",
+            "Konfiguration → Zu viel / zu wenig, Bestellübersicht, PDF-Übersicht",
         ],
-        hinweis: `Zum Bestellen und Einkaufen zusätzlich „${EINKAEUFER_ROLE}" vergeben.`,
+        hinweis: `Zum Bestellen und Einkaufen zusätzlich „${EINKAEUFER_ROLE}“ vergeben.`,
+    },
+
+    [EINKAUFSMANAGEMENT_ROLE]: {
+        kurz: "Behält die Einkäufe im Blick und bekommt nach jedem Einkauf eine E-Mail.",
+        bereiche: [
+            "Konfiguration → Zu viel / zu wenig, Bestellübersicht, PDF-Übersicht",
+            "E-Mail mit der Kostenübersicht nach jedem Einkauf",
+        ],
+        hinweis: `Zum Bestellen und Einkaufen zusätzlich „${EINKAEUFER_ROLE}“ vergeben.`,
     },
 
     [ADMIN_ROLE]: {
-        kurz: "Verwaltet die Foodcoop und die Benutzer.",
+        kurz: "Darf alles und verwaltet die Benutzer.",
         bereiche: [
+            "Alle Bereiche der anderen Rollen",
+            "Konfiguration → Einstellungen und Deadline",
             "Verwaltung (Statistik, Mitglieder, Benutzer & Rollen)",
-            "Organisation (wie Organisator)",
-            "Konfiguration",
         ],
-        hinweis: `Zum Bestellen, Einkaufen und für die Produkte zusätzlich „${EINKAEUFER_ROLE}" vergeben.`,
-    },
-
-    Einkaufsmanagement: {
-        kurz: "Bekommt nach jedem Einkauf eine E-Mail.",
-        bereiche: [
-            "Keine zusätzlichen Seiten",
-        ],
-        hinweis: "Der Text der E-Mail steht unter Konfiguration → Einstellungen.",
     },
 };
 

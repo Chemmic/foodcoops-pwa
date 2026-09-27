@@ -1,20 +1,14 @@
-import React, {
-    useEffect,
-} from "react";
-
-import {
-    Navigate,
-    useLocation,
-} from "react-router";
+import React from "react";
 
 import {
     Box,
     CircularProgress,
+    Paper,
     Stack,
     Typography,
 } from "@mui/material";
 
-import { toast } from "react-toastify";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 import { useAuth } from "./AuthContext.jsx";
 import {
@@ -22,8 +16,12 @@ import {
 } from "./AuthorizedFunction";
 
 import {
-    PFADE,
-} from "../router/pfade.js";
+    AuthButton,
+} from "./AuthButton.jsx";
+
+import {
+    benoetigteRollen,
+} from "./rechte.js";
 
 
 function LoadingScreen() {
@@ -56,70 +54,107 @@ function LoadingScreen() {
 }
 
 
-function UnauthorizedRedirect({
+/**
+ * Hinweis statt Inhalt: nicht angemeldet (mit Anmelde-Button) oder die
+ * nötige Rolle fehlt.
+ */
+function KeinZugriff({
     roles,
     authenticated,
 }) {
-    const location =
-        useLocation();
-
-
-    const roleText =
-        roles &&
-        roles.length > 0
-            ? roles.join(" oder ")
-            : null;
-
-
-    useEffect(() => {
-        if (!authenticated) {
-            toast.warning(
-                "Bitte melde dich an, um diesen Bereich zu öffnen.",
-                {
-                    toastId:
-                        "authentication-required",
-                }
-            );
-
-            return;
-        }
-
-
-        if (roleText) {
-            toast.warning(
-                `Keine Berechtigung. Benötigte Rolle: ${roleText}`,
-                {
-                    toastId:
-                        `missing-role-${roleText}`,
-                }
-            );
-
-            return;
-        }
-
-
-        toast.warning(
-            "Du hast keine Berechtigung für diesen Bereich.",
-            {
-                toastId:
-                    "missing-permission",
-            }
-        );
-    }, [
-        authenticated,
-        roleText,
-    ]);
-
+    const rollen =
+        benoetigteRollen(roles);
 
     return (
-        <Navigate
-            to={PFADE.start}
-            replace
-            state={{
-                from:
-                    location.pathname,
+        <Box
+            sx={{
+                display: "flex",
+                justifyContent: "center",
+                py: {
+                    xs: 4,
+                    sm: 8,
+                },
             }}
-        />
+        >
+            <Paper
+                elevation={0}
+                sx={{
+                    maxWidth: 440,
+                    width: "100%",
+                    p: {
+                        xs: 3,
+                        sm: 4,
+                    },
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 3,
+                    textAlign: "center",
+                }}
+            >
+                <Stack
+                    spacing={2}
+                    sx={{
+                        alignItems: "center",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: "50%",
+                            display: "grid",
+                            placeItems: "center",
+                            bgcolor: "action.hover",
+                            color: "text.secondary",
+                        }}
+                    >
+                        <LockOutlinedIcon />
+                    </Box>
+
+                    {authenticated ? (
+                        <>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 700,
+                                }}
+                            >
+                                Kein Zugriff
+                            </Typography>
+
+                            <Typography color="text.secondary">
+                                {rollen.length > 0
+                                    ? `Dafür brauchst du die Rolle ${rollen.map(rolle => `„${rolle}“`).join(" oder ")}.`
+                                    : "Du hast keine Berechtigung für diesen Bereich."}
+                                {" "}
+                                Ein Admin kann sie dir unter Verwaltung → Benutzer geben.
+                            </Typography>
+                        </>
+                    ) : (
+                        <>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 700,
+                                }}
+                            >
+                                Bitte melde dich an
+                            </Typography>
+
+                            <Typography color="text.secondary">
+                                Dieser Bereich ist nur für angemeldete Mitglieder.
+                            </Typography>
+
+                            <AuthButton
+                                showUsername={
+                                    false
+                                }
+                            />
+                        </>
+                    )}
+                </Stack>
+            </Paper>
+        </Box>
     );
 }
 
@@ -134,7 +169,7 @@ function UnauthorizedRedirect({
  *     path="/konfiguration/*"
  *     element={
  *         <PrivateRoute
- *             roles={["Einkäufer"]}
+ *             roles={RECHTE.konfiguration}
  *         >
  *             <MainAdmin />
  *         </PrivateRoute>
@@ -161,7 +196,7 @@ export function PrivateRoute({
 
     if (!authenticated) {
         return (
-            <UnauthorizedRedirect
+            <KeinZugriff
                 roles={roles}
                 authenticated={false}
             />
@@ -178,7 +213,7 @@ export function PrivateRoute({
 
     if (!authorized) {
         return (
-            <UnauthorizedRedirect
+            <KeinZugriff
                 roles={roles}
                 authenticated
             />

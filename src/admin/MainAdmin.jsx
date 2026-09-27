@@ -38,10 +38,32 @@ import {
     PFADE,
 } from "../router/pfade.js";
 
+import {
+    useAuth,
+} from "../auth/AuthContext.jsx";
+
+import {
+    PrivateRoute,
+} from "../auth/PrivateRoute.jsx";
+
+import {
+    RECHTE,
+} from "../auth/rechte.js";
+
 
 export function MainAdmin() {
     const location =
         useLocation();
+
+    // Einstellungen und Deadline nur für Admins
+    const {
+        hasRoles,
+    } = useAuth();
+
+    const darfEinstellungen =
+        hasRoles(
+            RECHTE.einstellungen
+        );
 
 
     // =========================================================================
@@ -92,6 +114,12 @@ export function MainAdmin() {
         return "zuVielzuWenig";
     };
 
+    const aktiverTab =
+        ["config", "deadline"].includes(getActiveTab()) &&
+        !darfEinstellungen
+            ? false
+            : getActiveTab();
+
 
     // =========================================================================
     // Render
@@ -118,7 +146,7 @@ export function MainAdmin() {
             >
                 <Tabs
                     value={
-                        getActiveTab()
+                        aktiverTab
                     }
                     variant="scrollable"
                     scrollButtons="auto"
@@ -152,23 +180,27 @@ export function MainAdmin() {
                         to={PFADE.pdfUebersicht}
                     />
 
-                    <Tab
-                        value="config"
-                        label="Konfiguration"
-                        component={
-                            Link
-                        }
-                        to={PFADE.einstellungen}
-                    />
+                    {darfEinstellungen && (
+                        <Tab
+                            value="config"
+                            label="Konfiguration"
+                            component={
+                                Link
+                            }
+                            to={PFADE.einstellungen}
+                        />
+                    )}
 
-                    <Tab
-                        value="deadline"
-                        label="Deadline"
-                        component={
-                            Link
-                        }
-                        to={PFADE.deadline}
-                    />
+                    {darfEinstellungen && (
+                        <Tab
+                            value="deadline"
+                            label="Deadline"
+                            component={
+                                Link
+                            }
+                            to={PFADE.deadline}
+                        />
+                    )}
                 </Tabs>
             </Paper>
 
@@ -198,14 +230,22 @@ export function MainAdmin() {
                 <Route
                     path="einstellungen"
                     element={
-                        <AdminConfig />
+                        <PrivateRoute
+                            roles={RECHTE.einstellungen}
+                        >
+                            <AdminConfig />
+                        </PrivateRoute>
                     }
                 />
 
                 <Route
                     path="deadline"
                     element={
-                        <Deadline />
+                        <PrivateRoute
+                            roles={RECHTE.einstellungen}
+                        >
+                            <Deadline />
+                        </PrivateRoute>
                     }
                 />
 

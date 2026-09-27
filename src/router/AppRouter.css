@@ -50,7 +50,8 @@
  * Desktop
  * =============================================================================
  *
- * Ab Desktop soll die App selbst nicht mehr vertikal scrollen.
+ * Ab Desktop soll die App bei Bestellung / Management selbst nicht mehr
+ * vertikal scrollen (AppShell--fixed). Alle anderen Seiten scrollen normal.
  *
  * Höhe:
  *
@@ -64,7 +65,7 @@
 
 @media (min-width: 1200px) {
 
-    .AppShell {
+    .AppShell--fixed {
         height: 100dvh;
         min-height: 100dvh;
 
@@ -72,7 +73,7 @@
     }
 
 
-    .AppShellContent {
+    .AppShell--fixed .AppShellContent {
         height: calc(100dvh - 68px);
         min-height: 0;
 
@@ -80,7 +81,7 @@
     }
 
 
-    .AppShellPage {
+    .AppShell--fixed .AppShellPage {
         height: 100%;
         min-height: 0;
 
@@ -95,7 +96,7 @@
      * Das aktuell gerenderte Route-Element muss die verfügbare
      * Höhe ebenfalls übernehmen können.
      */
-    .AppShellPage > * {
+    .AppShell--fixed .AppShellPage > * {
         min-height: 0;
     }
 }

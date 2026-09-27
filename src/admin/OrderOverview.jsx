@@ -26,13 +26,11 @@ import {
     TableHead,
     TableRow,
     TableSortLabel,
-    TextField,
     Typography,
 } from "@mui/material";
 
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 
 import { toast } from "react-toastify";
 
@@ -246,11 +244,6 @@ export function OrderOverview() {
     ] = useState([]);
 
     const [
-        gebindeValues,
-        setGebindeValues,
-    ] = useState({});
-
-    const [
         frischSorting,
         setFrischSorting,
     ] = useState([]);
@@ -259,15 +252,6 @@ export function OrderOverview() {
         brotSorting,
         setBrotSorting,
     ] = useState([]);
-
-    const [
-        refreshCounter,
-        refresh,
-    ] = React.useReducer(
-        value => value + 1,
-        0
-    );
-
 
     // =========================================================================
     // Daten laden
@@ -337,7 +321,6 @@ export function OrderOverview() {
         };
     }, [
         api,
-        refreshCounter,
     ]);
 
 
@@ -415,48 +398,39 @@ export function OrderOverview() {
                     enableSorting:
                         false,
 
-                    cell: info => {
-                        const item =
-                            info.row.original;
+                    // Festgelegt wird unter "Organisation" (Organisator)
+                    cell: info => (
+                        <NumberFormatComponent
+                            value={
+                                info.getValue()
+                            }
+                            includeFractionDigits={
+                                false
+                            }
+                        />
+                    ),
+                },
 
-                        return (
-                            <TextField
-                                size="small"
-                                type="number"
-                                value={
-                                    gebindeValues[
-                                        item.id
-                                    ] ??
-                                    ""
-                                }
-                                placeholder={
-                                    String(
-                                        item.zuBestellendeGebinde ??
-                                            ""
-                                    )
-                                }
-                                onChange={event =>
-                                    setGebindeValues(
-                                        previous => ({
-                                            ...previous,
+                {
+                    header:
+                        "Zu viel / Zu wenig",
 
-                                            [item.id]:
-                                                event
-                                                    .target
-                                                    .value,
-                                        })
-                                    )
-                                }
-                                sx={{
-                                    width:
-                                        120,
-                                }}
-                            />
-                        );
-                    },
+                    accessorKey:
+                        "zuVielzuWenig",
+
+                    cell: info => (
+                        <NumberFormatComponent
+                            value={
+                                info.getValue()
+                            }
+                            includeFractionDigits={
+                                false
+                            }
+                        />
+                    ),
                 },
             ],
-            [gebindeValues]
+            []
         );
 
 
@@ -538,93 +512,6 @@ export function OrderOverview() {
             getSortedRowModel:
                 getSortedRowModel(),
         });
-
-
-    // =========================================================================
-    // Gebinde aktualisieren
-    // =========================================================================
-
-    const submitUpdateOverview =
-        async () => {
-            const changes =
-                discrepancy.filter(
-                    item =>
-                        gebindeValues[
-                            item.id
-                        ] !== undefined &&
-                        gebindeValues[
-                            item.id
-                        ] !== ""
-                );
-
-
-            if (
-                changes.length === 0
-            ) {
-                toast.info(
-                    "Es wurden keine Änderungen eingetragen."
-                );
-
-                return;
-            }
-
-
-            try {
-                const responses =
-                    await Promise.all(
-                        changes.map(
-                            item =>
-                                api.updateGebindeOverview(
-                                    item.id,
-                                    gebindeValues[
-                                        item.id
-                                    ]
-                                )
-                        )
-                    );
-
-
-                const failed =
-                    responses.some(
-                        response =>
-                            !response.ok
-                    );
-
-
-                if (failed) {
-                    toast.error(
-                        "Mindestens eine Änderung konnte nicht gespeichert werden."
-                    );
-
-                    return;
-                }
-
-
-                toast.success(
-                    "Die Änderungen wurden erfolgreich gespeichert."
-                );
-
-
-                setGebindeValues({});
-
-                refresh();
-
-
-                window.scrollTo({
-                    top: 0,
-                    behavior: "smooth",
-                });
-            } catch (error) {
-                console.error(
-                    "Fehler beim Aktualisieren der Gebinde:",
-                    error
-                );
-
-                toast.error(
-                    "Die Änderungen konnten nicht gespeichert werden."
-                );
-            }
-        };
 
 
     // =========================================================================
@@ -824,6 +711,11 @@ export function OrderOverview() {
                             />
                         )}
 
+                        <Alert severity="info">
+                            Was final bestellt wird, legt die Rolle Organisator unter
+                            „Organisation" fest.
+                        </Alert>
+
                         <Stack
                             direction={{
                                 xs:
@@ -832,18 +724,6 @@ export function OrderOverview() {
                             }}
                             spacing={1}
                         >
-                            <Button
-                                variant="contained"
-                                startIcon={
-                                    <SaveOutlinedIcon />
-                                }
-                                onClick={
-                                    submitUpdateOverview
-                                }
-                            >
-                                Gebinde aktualisieren
-                            </Button>
-
                             <Button
                                 variant="outlined"
                                 startIcon={

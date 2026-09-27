@@ -415,9 +415,7 @@ export function LagerTable({
                                                 >
                                                     <Typography
                                                         variant="subtitle1"
-                                                        fontWeight={
-                                                            700
-                                                        }
+                                                        sx={{ fontWeight: 700 }}
                                                     >
                                                         {
                                                             row

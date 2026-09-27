@@ -26,6 +26,10 @@ import {
     BrotBestandManagement,
 } from "./brotmanagement/BrotBestandManagement.jsx";
 
+import {
+    PFADE,
+} from "./router/pfade.js";
+
 
 export function MainManagement() {
     const location =
@@ -43,7 +47,7 @@ export function MainManagement() {
 
         if (
             path.startsWith(
-                "/mainManagement/frischbestandmanagement"
+                PFADE.produkteFrisch
             )
         ) {
             return "frischbestandmanagement";
@@ -52,7 +56,7 @@ export function MainManagement() {
 
         if (
             path.startsWith(
-                "/mainManagement/brotbestandmanagement"
+                PFADE.produkteBrot
             )
         ) {
             return "brotbestandmanagement";
@@ -101,7 +105,7 @@ export function MainManagement() {
                         component={
                             Link
                         }
-                        to="/mainManagement/lager"
+                        to={PFADE.produkteLager}
                     />
 
                     <Tab
@@ -110,7 +114,7 @@ export function MainManagement() {
                         component={
                             Link
                         }
-                        to="/mainManagement/frischbestandmanagement"
+                        to={PFADE.produkteFrisch}
                     />
 
                     <Tab
@@ -119,7 +123,7 @@ export function MainManagement() {
                         component={
                             Link
                         }
-                        to="/mainManagement/brotbestandmanagement"
+                        to={PFADE.produkteBrot}
                     />
                 </Tabs>
             </Paper>
@@ -134,14 +138,14 @@ export function MainManagement() {
                 />
 
                 <Route
-                    path="frischbestandmanagement"
+                    path="frisch"
                     element={
                         <FrischBestandManagement />
                     }
                 />
 
                 <Route
-                    path="brotbestandmanagement"
+                    path="brot"
                     element={
                         <BrotBestandManagement />
                     }
@@ -149,14 +153,14 @@ export function MainManagement() {
 
 
                 {/* ========================================================= */}
-                {/* /mainManagement                                           */}
+                {/* /produkte                                                 */}
                 {/* ========================================================= */}
 
                 <Route
                     index
                     element={
                         <Navigate
-                            to="/mainManagement/lager"
+                            to={PFADE.produkteLager}
                             replace
                         />
                     }
@@ -171,7 +175,7 @@ export function MainManagement() {
                     path="*"
                     element={
                         <Navigate
-                            to="/mainManagement/lager"
+                            to={PFADE.produkteLager}
                             replace
                         />
                     }

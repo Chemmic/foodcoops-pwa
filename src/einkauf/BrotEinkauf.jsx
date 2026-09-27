@@ -23,130 +23,252 @@ import {
     TextField,
 } from "@mui/material";
 
-import { useApi } from "../ApiService.jsx";
-import { useAuth } from "../auth/AuthContext.jsx";
+import {
+    useApi,
+} from "../ApiService.jsx";
 
-import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
+import {
+    useAuth,
+} from "../auth/AuthContext.jsx";
+
+import NumberFormatComponent
+    from "../logic/NumberFormatComponent.jsx";
 
 
-const getItemKey = (item, index) =>
-    item?.id ?? `brot-${index}`;
+const getItemKey = (
+    item,
+    index
+) =>
+    item?.id ??
+    `brot-${index}`;
 
+
+// =============================================================================
+// Collection aus neuem oder altem Backend extrahieren
+// =============================================================================
+
+function extractCollection(
+    data,
+    embeddedKey
+) {
+    /*
+     * Neue Controller liefern direkt:
+     *
+     * [
+     *     {...},
+     *     {...}
+     * ]
+     */
+    if (Array.isArray(data)) {
+        return data;
+    }
+
+    /*
+     * Alte Spring-HATEOAS-Responses:
+     *
+     * {
+     *     "_embedded": {
+     *         "brotBestellungRepresentationList": [...]
+     *     }
+     * }
+     */
+    const embedded =
+        data
+            ?._embedded
+            ?.[embeddedKey];
+
+    return Array.isArray(
+        embedded
+    )
+        ? embedded
+        : [];
+}
+
+
+// =============================================================================
+// Brot Einkauf
+// =============================================================================
 
 export function BrotEinkauf(props) {
-    const api = useApi();
+    const api =
+        useApi();
 
-    const { keycloak } =
+    const {
+        keycloak,
+    } =
         useAuth();
+
 
     const [
         brotBestellung,
         setBrotBestellung,
-    ] = useState([]);
+    ] =
+        useState([]);
 
     const [
         amounts,
         setAmounts,
-    ] = useState({});
+    ] =
+        useState({});
 
     const [
         sorting,
         setSorting,
-    ] = useState([]);
+    ] =
+        useState([]);
 
 
     // =========================================================================
     // Daten laden
     // =========================================================================
 
-    useEffect(() => {
-        let active = true;
+    useEffect(
+        () => {
+            let active =
+                true;
 
-        const fetchBrotBestellung =
-            async () => {
-                try {
-                    const personId =
-                        keycloak
-                            ?.tokenParsed
-                            ?.preferred_username;
 
-                    if (!personId) {
-                        return;
-                    }
+            const fetchBrotBestellung =
+                async () => {
+                    try {
+                        const personId =
+                            keycloak
+                                ?.tokenParsed
+                                ?.preferred_username;
 
-                    const response =
-                        await api.readBrotBestellungBetweenDatesProPerson(
-                            personId
+
+                        if (!personId) {
+                            if (active) {
+                                setBrotBestellung(
+                                    []
+                                );
+                            }
+
+                            return;
+                        }
+
+
+                        /*
+                         * Der Einkauf arbeitet mit der
+                         * abgeschlossenen vorherigen Runde.
+                         *
+                         * GET
+                         * /brotBestellung/previous/person/{personId}
+                         */
+                        const response =
+                            await api
+                                .readBrotBestellungVorherigeProPerson(
+                                    personId
+                                );
+
+
+                        if (!response.ok) {
+                            console.error(
+                                "[BrotEinkauf] Bestellung konnte nicht geladen werden:",
+                                response.status
+                            );
+
+                            if (active) {
+                                setBrotBestellung(
+                                    []
+                                );
+                            }
+
+                            return;
+                        }
+
+
+                        const data =
+                            await response.json();
+
+
+                        const orders =
+                            extractCollection(
+                                data,
+                                "brotBestellungRepresentationList"
+                            );
+
+
+                        if (active) {
+                            setBrotBestellung(
+                                orders
+                            );
+                        }
+                    } catch (error) {
+                        console.error(
+                            "Error fetching brotBestellung:",
+                            error
                         );
 
-                    if (!response.ok) {
-                        return;
+                        if (active) {
+                            setBrotBestellung(
+                                []
+                            );
+                        }
                     }
+                };
 
-                    const data =
-                        await response.json();
 
-                    const orders =
-                        data?._embedded
-                            ?.brotBestellungRepresentationList;
+            fetchBrotBestellung();
 
-                    if (
-                        active &&
-                        Array.isArray(
-                            orders
-                        )
-                    ) {
-                        setBrotBestellung(
-                            orders
-                        );
-                    }
-                } catch (error) {
-                    console.error(
-                        "Error fetching brotBestellung:",
-                        error
-                    );
-                }
+
+            return () => {
+                active =
+                    false;
             };
-
-        fetchBrotBestellung();
-
-        return () => {
-            active = false;
-        };
-    }, [
-        api,
-        keycloak,
-        props.forceUpdate,
-    ]);
+        },
+        [
+            api,
+            keycloak,
+            props.forceUpdate,
+        ]
+    );
 
 
-    useEffect(() => {
-        setAmounts({});
-    }, [props.resetKey]);
+    // =========================================================================
+    // Nach Einkauf Eingaben zurücksetzen
+    // =========================================================================
+
+    useEffect(
+        () => {
+            setAmounts(
+                {}
+            );
+        },
+        [
+            props.resetKey,
+        ]
+    );
 
 
     // =========================================================================
     // Parent informieren
     // =========================================================================
 
-    useEffect(() => {
-        props.handleBrot?.(
-            brotBestellung
-        );
-    }, [
-        brotBestellung,
-        props.handleBrot,
-    ]);
+    useEffect(
+        () => {
+            props.handleBrot?.(
+                brotBestellung
+            );
+        },
+        [
+            brotBestellung,
+            props.handleBrot,
+        ]
+    );
 
 
-    useEffect(() => {
-        props.onAmountsChange?.(
-            amounts
-        );
-    }, [
-        amounts,
-        props.onAmountsChange,
-    ]);
+    useEffect(
+        () => {
+            props.onAmountsChange?.(
+                amounts
+            );
+        },
+        [
+            amounts,
+            props.onAmountsChange,
+        ]
+    );
 
 
     // =========================================================================
@@ -154,166 +276,197 @@ export function BrotEinkauf(props) {
     // =========================================================================
 
     const totalPrice =
-        useMemo(() => {
-            return brotBestellung.reduce(
-                (
-                    total,
-                    item,
-                    index
-                ) => {
-                    const key =
-                        getItemKey(
-                            item,
-                            index
-                        );
+        useMemo(
+            () => {
+                return brotBestellung.reduce(
+                    (
+                        total,
+                        item,
+                        index
+                    ) => {
+                        const key =
+                            getItemKey(
+                                item,
+                                index
+                            );
 
-                    return (
-                        total +
-                        Number(
-                            amounts[key] ??
+
+                        return (
+                            total +
+                            Number(
+                                amounts[key] ??
                                 0
-                        ) *
+                            ) *
                             Number(
                                 item
                                     ?.brotbestand
                                     ?.preis ??
-                                    0
+                                0
                             )
-                    );
-                },
-                0
-            );
-        }, [
-            brotBestellung,
-            amounts,
-        ]);
-
-
-    useEffect(() => {
-        props.onPriceChange?.(
-            totalPrice
+                        );
+                    },
+                    0
+                );
+            },
+            [
+                brotBestellung,
+                amounts,
+            ]
         );
-    }, [
-        totalPrice,
-        props.onPriceChange,
-    ]);
+
+
+    useEffect(
+        () => {
+            props.onPriceChange?.(
+                totalPrice
+            );
+        },
+        [
+            totalPrice,
+            props.onPriceChange,
+        ]
+    );
 
 
     // =========================================================================
     // Columns
     // =========================================================================
 
-    const columns = useMemo(
-        () => [
-            {
-                header: "Produkt",
-                accessorKey:
-                    "brotbestand.name",
-            },
-            {
-                header: "Preis in €",
-                accessorKey:
-                    "brotbestand.preis",
+    const columns =
+        useMemo(
+            () => [
+                {
+                    header:
+                        "Produkt",
 
-                cell: info => (
-                    <NumberFormatComponent
-                        value={
-                            info.getValue()
-                        }
-                    />
-                ),
-            },
-            {
-                header:
-                    "Bestellmenge",
-                accessorKey:
-                    "bestellmenge",
-
-                cell: info => (
-                    <NumberFormatComponent
-                        value={
-                            info.getValue()
-                        }
-                        includeFractionDigits={
-                            false
-                        }
-                    />
-                ),
-            },
-            {
-                id: "menge",
-                header:
-                    "Genommene Menge",
-                enableSorting: false,
-
-                cell: info => {
-                    const item =
-                        info.row.original;
-
-                    const index =
-                        brotBestellung.indexOf(
-                            item
-                        );
-
-                    const key =
-                        getItemKey(
-                            item,
-                            index
-                        );
-
-                    const unavailable =
-                        item
-                            ?.brotbestand
-                            ?.verfuegbarkeit ===
-                        false;
-
-                    return (
-                        <TextField
-                            size="small"
-                            type="number"
-                            value={
-                                amounts[key] ??
-                                ""
-                            }
-                            disabled={
-                                unavailable
-                            }
-                            slotProps={{
-                                htmlInput: {
-                                    min: 0,
-                                    step: 1,
-                                },
-                            }}
-                            onChange={event =>
-                                setAmounts(
-                                    previous => ({
-                                        ...previous,
-
-                                        [key]:
-                                            event
-                                                .target
-                                                .value,
-                                    })
-                                )
-                            }
-                            sx={{
-                                width: 110,
-                            }}
-                        />
-                    );
+                    accessorKey:
+                        "brotbestand.name",
                 },
-            },
-        ],
-        [
-            brotBestellung,
-            amounts,
-        ]
-    );
 
+                {
+                    header:
+                        "Preis in €",
+
+                    accessorKey:
+                        "brotbestand.preis",
+
+                    cell:
+                        info => (
+                            <NumberFormatComponent
+                                value={
+                                    info.getValue()
+                                }
+                            />
+                        ),
+                },
+
+                {
+                    header:
+                        "Bestellmenge",
+
+                    accessorKey:
+                        "bestellmenge",
+
+                    cell:
+                        info => (
+                            <NumberFormatComponent
+                                value={
+                                    info.getValue()
+                                }
+                                includeFractionDigits={
+                                    false
+                                }
+                            />
+                        ),
+                },
+
+                {
+                    id:
+                        "menge",
+
+                    header:
+                        "Genommene Menge",
+
+                    enableSorting:
+                        false,
+
+                    cell:
+                        info => {
+                            const item =
+                                info.row.original;
+
+                            const index =
+                                brotBestellung.indexOf(
+                                    item
+                                );
+
+                            const key =
+                                getItemKey(
+                                    item,
+                                    index
+                                );
+
+                            const unavailable =
+                                item
+                                    ?.brotbestand
+                                    ?.verfuegbarkeit ===
+                                false;
+
+
+                            return (
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    value={
+                                        amounts[key] ??
+                                        ""
+                                    }
+                                    disabled={
+                                        unavailable
+                                    }
+                                    slotProps={{
+                                        htmlInput: {
+                                            min: 0,
+                                            step: 1,
+                                        },
+                                    }}
+                                    onChange={
+                                        event =>
+                                            setAmounts(
+                                                previous => ({
+                                                    ...previous,
+
+                                                    [key]:
+                                                        event
+                                                            .target
+                                                            .value,
+                                                })
+                                            )
+                                    }
+                                    sx={{
+                                        width: 110,
+                                    }}
+                                />
+                            );
+                        },
+                },
+            ],
+            [
+                brotBestellung,
+                amounts,
+            ]
+        );
+
+
+    // =========================================================================
+    // Table
+    // =========================================================================
 
     const table =
         useReactTable({
-            data: brotBestellung,
+            data:
+                brotBestellung,
+
             columns,
 
             state: {
@@ -332,11 +485,16 @@ export function BrotEinkauf(props) {
 
 
     if (
-        brotBestellung.length === 0
+        brotBestellung.length ===
+        0
     ) {
         return null;
     }
 
+
+    // =========================================================================
+    // Render
+    // =========================================================================
 
     return (
         <TableContainer
@@ -344,7 +502,9 @@ export function BrotEinkauf(props) {
             elevation={0}
             sx={{
                 border: 1,
-                borderColor: "divider",
+                borderColor:
+                    "divider",
+
                 borderRadius: 2,
                 overflowX: "auto",
             }}
@@ -369,7 +529,10 @@ export function BrotEinkauf(props) {
                                     {headerGroup.headers.map(
                                         header => {
                                             const sorted =
-                                                header.column.getIsSorted();
+                                                header
+                                                    .column
+                                                    .getIsSorted();
+
 
                                             return (
                                                 <TableCell
@@ -377,43 +540,56 @@ export function BrotEinkauf(props) {
                                                         header.id
                                                     }
                                                     sx={{
-                                                        fontWeight: 700,
+                                                        fontWeight:
+                                                            700,
                                                     }}
                                                 >
-                                                    {header.column.getCanSort() ? (
-                                                        <TableSortLabel
-                                                            active={
-                                                                Boolean(
-                                                                    sorted
-                                                                )
-                                                            }
-                                                            direction={
-                                                                sorted ===
-                                                                "desc"
-                                                                    ? "desc"
-                                                                    : "asc"
-                                                            }
-                                                            onClick={
-                                                                header.column.getToggleSortingHandler()
-                                                            }
-                                                        >
-                                                            {flexRender(
+                                                    {
+                                                        header
+                                                            .column
+                                                            .getCanSort()
+                                                            ? (
+                                                                <TableSortLabel
+                                                                    active={
+                                                                        Boolean(
+                                                                            sorted
+                                                                        )
+                                                                    }
+                                                                    direction={
+                                                                        sorted ===
+                                                                        "desc"
+                                                                            ? "desc"
+                                                                            : "asc"
+                                                                    }
+                                                                    onClick={
+                                                                        header
+                                                                            .column
+                                                                            .getToggleSortingHandler()
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        flexRender(
+                                                                            header
+                                                                                .column
+                                                                                .columnDef
+                                                                                .header,
+
+                                                                            header
+                                                                                .getContext()
+                                                                        )
+                                                                    }
+                                                                </TableSortLabel>
+                                                            )
+                                                            : flexRender(
                                                                 header
                                                                     .column
                                                                     .columnDef
                                                                     .header,
-                                                                header.getContext()
-                                                            )}
-                                                        </TableSortLabel>
-                                                    ) : (
-                                                        flexRender(
-                                                            header
-                                                                .column
-                                                                .columnDef
-                                                                .header,
-                                                            header.getContext()
-                                                        )
-                                                    )}
+
+                                                                header
+                                                                    .getContext()
+                                                            )
+                                                    }
                                                 </TableCell>
                                             );
                                         }
@@ -423,50 +599,61 @@ export function BrotEinkauf(props) {
                         )}
                 </TableHead>
 
+
                 <TableBody>
                     {table
                         .getRowModel()
-                        .rows.map(row => {
-                            const unavailable =
-                                row
-                                    .original
-                                    ?.brotbestand
-                                    ?.verfuegbarkeit ===
-                                false;
+                        .rows
+                        .map(
+                            row => {
+                                const unavailable =
+                                    row
+                                        .original
+                                        ?.brotbestand
+                                        ?.verfuegbarkeit ===
+                                    false;
 
-                            return (
-                                <TableRow
-                                    key={row.id}
-                                    hover
-                                    sx={{
-                                        opacity:
-                                            unavailable
-                                                ? 0.5
-                                                : 1,
-                                    }}
-                                >
-                                    {row
-                                        .getVisibleCells()
-                                        .map(
-                                            cell => (
-                                                <TableCell
-                                                    key={
-                                                        cell.id
-                                                    }
-                                                >
-                                                    {flexRender(
-                                                        cell
-                                                            .column
-                                                            .columnDef
-                                                            .cell,
-                                                        cell.getContext()
-                                                    )}
-                                                </TableCell>
-                                            )
-                                        )}
-                                </TableRow>
-                            );
-                        })}
+
+                                return (
+                                    <TableRow
+                                        key={
+                                            row.id
+                                        }
+                                        hover
+                                        sx={{
+                                            opacity:
+                                                unavailable
+                                                    ? 0.5
+                                                    : 1,
+                                        }}
+                                    >
+                                        {row
+                                            .getVisibleCells()
+                                            .map(
+                                                cell => (
+                                                    <TableCell
+                                                        key={
+                                                            cell.id
+                                                        }
+                                                    >
+                                                        {
+                                                            flexRender(
+                                                                cell
+                                                                    .column
+                                                                    .columnDef
+                                                                    .cell,
+
+                                                                cell
+                                                                    .getContext()
+                                                            )
+                                                        }
+                                                    </TableCell>
+                                                )
+                                            )}
+                                    </TableRow>
+                                );
+                            }
+                        )}
                 </TableBody>
             </Table>
         </TableContainer>

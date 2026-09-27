@@ -33,6 +33,13 @@ import HistoryOutlinedIcon
 import HelpOutlinedIcon
     from "@mui/icons-material/HelpOutlined";
 
+import {
+    GruppenZeile,
+    gruppeVor,
+    istBestellt,
+    markierung,
+} from "./eigeneBestellung.jsx";
+
 
 export function BestellungTable({
     columns,
@@ -187,8 +194,8 @@ export function BestellungTable({
             <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
                 sx={{
+                    alignItems: "center",
                     flexShrink: 0,
 
                     justifyContent: {
@@ -202,7 +209,7 @@ export function BestellungTable({
                     title={
                         <Box>
                             <Typography
-                                fontWeight={700}
+                                sx={{ fontWeight: 700 }}
                             >
                                 Bestellung der Vorwoche
                             </Typography>
@@ -412,26 +419,53 @@ export function BestellungTable({
                             .getRowModel()
                             .rows
                             .map(
-                                row => {
+                                (row, index, zeilen) => {
                                     const product =
                                         row.original;
+
+                                    // In dieser Runde schon bestellt -> oben und hervorgehoben
+                                    const bestellt =
+                                        istBestellt(product);
+
+                                    const gruppe =
+                                        gruppeVor(
+                                            zeilen,
+                                            index,
+                                            table.getState().sorting.length > 0
+                                        );
+
+                                    const ersteZelle =
+                                        row.getVisibleCells()[0]?.id;
 
                                     const unavailable =
                                         product.verfuegbarkeit ===
                                         false;
 
                                     return (
-                                        <TableRow
+                                        <React.Fragment
                                             key={
                                                 row.id
                                             }
+                                        >
+                                        {gruppe && (
+                                            <GruppenZeile
+                                                gruppe={gruppe}
+                                                spalten={row.getVisibleCells().length}
+                                            />
+                                        )}
+
+                                        <TableRow
                                             hover
-                                            sx={{
+                                            sx={theme => ({
                                                 opacity:
                                                     unavailable
                                                         ? 0.5
                                                         : 1,
-                                            }}
+
+                                                ...(bestellt && {
+                                                    bgcolor: markierung(theme),
+                                                }),
+                                            })}
                                         >
                                             {row
                                                 .getVisibleCells()
@@ -527,7 +561,17 @@ export function BestellungTable({
                                                                 key={
                                                                     cell.id
                                                                 }
-                                                                sx={{
+                                                                sx={theme => ({
+                                                                    fontWeight:
+                                                                        bestellt && cell.column.id === "name"
+                                                                            ? 700
+                                                                            : undefined,
+                                                                    
+                                                                    boxShadow:
+                                                                        bestellt && cell.id === ersteZelle
+                                                                            ? `inset 3px 0 0 ${theme.palette.primary.main}`
+                                                                            : undefined,
+                                                                    
                                                                     ...(stickyProduct
                                                                         ? {
                                                                             position:
@@ -540,7 +584,9 @@ export function BestellungTable({
                                                                                 1,
 
                                                                             bgcolor:
-                                                                                "background.paper",
+                                                                            bestellt
+                                                                                ? markierung(theme)
+                                                                                : "background.paper",
 
                                                                             borderRight:
                                                                                 1,
@@ -549,7 +595,7 @@ export function BestellungTable({
                                                                                 "divider",
                                                                         }
                                                                         : {}),
-                                                                }}
+                                                                })}
                                                             >
                                                                 {flexRender(
                                                                     cell
@@ -565,6 +611,7 @@ export function BestellungTable({
                                                     }
                                                 )}
                                         </TableRow>
+                                        </React.Fragment>
                                     );
                                 }
                             )}

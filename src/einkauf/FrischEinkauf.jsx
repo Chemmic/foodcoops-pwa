@@ -12,7 +12,6 @@ import {
 } from "@tanstack/react-table";
 
 import {
-    Box,
     Chip,
     Paper,
     Stack,
@@ -27,168 +26,301 @@ import {
     Typography,
 } from "@mui/material";
 
-import { useApi } from "../ApiService.jsx";
-import { useAuth } from "../auth/AuthContext.jsx";
+import {
+    useApi,
+} from "../ApiService.jsx";
 
-import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
+import {
+    useAuth,
+} from "../auth/AuthContext.jsx";
+
+import NumberFormatComponent
+    from "../logic/NumberFormatComponent.jsx";
 
 
-const getItemKey = (item, index) =>
-    item?.id ?? `frisch-${index}`;
+const getItemKey = (
+    item,
+    index
+) =>
+    item?.id ??
+    `frisch-${index}`;
 
+
+// =============================================================================
+// Collection aus neuem oder altem Backend extrahieren
+// =============================================================================
+
+function extractCollection(
+    data,
+    embeddedKey
+) {
+    if (Array.isArray(data)) {
+        return data;
+    }
+
+    const embedded =
+        data
+            ?._embedded
+            ?.[embeddedKey];
+
+    return Array.isArray(
+        embedded
+    )
+        ? embedded
+        : [];
+}
+
+
+// =============================================================================
+// Frisch Einkauf
+// =============================================================================
 
 export function FrischEinkauf(props) {
-    const api = useApi();
+    const api =
+        useApi();
 
-    const { keycloak } =
+    const {
+        keycloak,
+    } =
         useAuth();
+
 
     const [
         frischBestellung,
         setFrischBestellung,
-    ] = useState([]);
+    ] =
+        useState([]);
 
     const [
         discrepancy,
         setDiscrepancy,
-    ] = useState([]);
+    ] =
+        useState([]);
 
     const [
         amounts,
         setAmounts,
-    ] = useState({});
+    ] =
+        useState({});
 
     const [
         sorting,
         setSorting,
-    ] = useState([]);
+    ] =
+        useState([]);
 
 
     // =========================================================================
     // Daten laden
     // =========================================================================
 
-    useEffect(() => {
-        let active = true;
-
-        const loadData =
-            async () => {
-                const personId =
-                    keycloak
-                        ?.tokenParsed
-                        ?.preferred_username;
-
-                if (!personId) {
-                    return;
-                }
-
-                try {
-                    const [
-                        orderResponse,
-                        overviewResponse,
-                    ] =
-                        await Promise.all([
-                            api.readFrischBestellungBetweenDatesProPerson(
-                                personId
-                            ),
-
-                            api.readBestellUebersicht(),
-                        ]);
+    useEffect(
+        () => {
+            let active =
+                true;
 
 
-                    if (!active) {
+            const loadData =
+                async () => {
+                    const personId =
+                        keycloak
+                            ?.tokenParsed
+                            ?.preferred_username;
+
+
+                    if (!personId) {
+                        if (active) {
+                            setFrischBestellung(
+                                []
+                            );
+                        }
+
                         return;
                     }
 
 
-                    if (
-                        orderResponse.ok
-                    ) {
-                        const data =
-                            await orderResponse.json();
+                    try {
+                        const [
+                            orderResponse,
+                            overviewResponse,
+                        ] =
+                            await Promise.all([
+                                /*
+                                 * Der Einkauf verwendet die
+                                 * abgeschlossene vorherige Runde.
+                                 *
+                                 * GET
+                                 * /frischBestellung/previous/person/{personId}
+                                 */
+                                api
+                                    .readFrischBestellungVorherigeProPerson(
+                                        personId
+                                    ),
 
-                        const orders =
-                            data?._embedded
-                                ?.frischBestellungRepresentationList;
-
-                        setFrischBestellung(
-                            Array.isArray(
-                                orders
-                            )
-                                ? orders
-                                : []
-                        );
-                    }
+                                api
+                                    .readBestellUebersicht(),
+                            ]);
 
 
-                    if (
-                        overviewResponse.ok
-                    ) {
-                        const text =
-                            await overviewResponse.text();
+                        if (!active) {
+                            return;
+                        }
 
-                        if (text) {
-                            const json =
-                                JSON.parse(
-                                    text
+
+                        // =====================================================
+                        // Bestellungen
+                        // =====================================================
+
+                        if (
+                            orderResponse.ok
+                        ) {
+                            const data =
+                                await orderResponse
+                                    .json();
+
+
+                            const orders =
+                                extractCollection(
+                                    data,
+                                    "frischBestellungRepresentationList"
                                 );
 
+
+                            setFrischBestellung(
+                                orders
+                            );
+                        } else {
+                            console.error(
+                                "[FrischEinkauf] Bestellung konnte nicht geladen werden:",
+                                orderResponse.status
+                            );
+
+                            setFrischBestellung(
+                                []
+                            );
+                        }
+
+
+                        // =====================================================
+                        // Bestellübersicht / Discrepancy
+                        // =====================================================
+
+                        if (
+                            overviewResponse.ok
+                        ) {
+                            const text =
+                                await overviewResponse
+                                    .text();
+
+
+                            if (text) {
+                                const json =
+                                    JSON.parse(
+                                        text
+                                    );
+
+
+                                setDiscrepancy(
+                                    Array.isArray(
+                                        json.discrepancy
+                                    )
+                                        ? json.discrepancy
+                                        : []
+                                );
+                            } else {
+                                setDiscrepancy(
+                                    []
+                                );
+                            }
+                        } else {
+                            console.error(
+                                "[FrischEinkauf] Bestellübersicht konnte nicht geladen werden:",
+                                overviewResponse.status
+                            );
+
                             setDiscrepancy(
-                                Array.isArray(
-                                    json.discrepancy
-                                )
-                                    ? json.discrepancy
-                                    : []
+                                []
+                            );
+                        }
+                    } catch (error) {
+                        console.error(
+                            "Error fetching Frisch-Einkauf:",
+                            error
+                        );
+
+                        if (active) {
+                            setFrischBestellung(
+                                []
+                            );
+
+                            setDiscrepancy(
+                                []
                             );
                         }
                     }
-                } catch (error) {
-                    console.error(
-                        "Error fetching Frisch-Einkauf:",
-                        error
-                    );
-                }
+                };
+
+
+            loadData();
+
+
+            return () => {
+                active =
+                    false;
             };
-
-        loadData();
-
-        return () => {
-            active = false;
-        };
-    }, [
-        api,
-        keycloak,
-        props.forceUpdate,
-    ]);
+        },
+        [
+            api,
+            keycloak,
+            props.forceUpdate,
+        ]
+    );
 
 
-    useEffect(() => {
-        setAmounts({});
-    }, [props.resetKey]);
+    // =========================================================================
+    // Nach Einkauf Eingaben zurücksetzen
+    // =========================================================================
+
+    useEffect(
+        () => {
+            setAmounts(
+                {}
+            );
+        },
+        [
+            props.resetKey,
+        ]
+    );
 
 
     // =========================================================================
     // Parent
     // =========================================================================
 
-    useEffect(() => {
-        props.handleFrisch?.(
-            frischBestellung
-        );
-    }, [
-        frischBestellung,
-        props.handleFrisch,
-    ]);
+    useEffect(
+        () => {
+            props.handleFrisch?.(
+                frischBestellung
+            );
+        },
+        [
+            frischBestellung,
+            props.handleFrisch,
+        ]
+    );
 
 
-    useEffect(() => {
-        props.onAmountsChange?.(
-            amounts
-        );
-    }, [
-        amounts,
-        props.onAmountsChange,
-    ]);
+    useEffect(
+        () => {
+            props.onAmountsChange?.(
+                amounts
+            );
+        },
+        [
+            amounts,
+            props.onAmountsChange,
+        ]
+    );
 
 
     // =========================================================================
@@ -196,26 +328,34 @@ export function FrischEinkauf(props) {
     // =========================================================================
 
     const discrepancyByProduct =
-        useMemo(() => {
-            return discrepancy.reduce(
-                (
-                    result,
-                    item
-                ) => {
-                    const name =
-                        item?.bestand
-                            ?.name;
+        useMemo(
+            () => {
+                return discrepancy.reduce(
+                    (
+                        result,
+                        item
+                    ) => {
+                        const name =
+                            item
+                                ?.bestand
+                                ?.name;
 
-                    if (name) {
-                        result[name] =
-                            item;
-                    }
 
-                    return result;
-                },
-                {}
-            );
-        }, [discrepancy]);
+                        if (name) {
+                            result[name] =
+                                item;
+                        }
+
+
+                        return result;
+                    },
+                    {}
+                );
+            },
+            [
+                discrepancy,
+            ]
+        );
 
 
     // =========================================================================
@@ -223,74 +363,92 @@ export function FrischEinkauf(props) {
     // =========================================================================
 
     const totalPrice =
-        useMemo(() => {
-            return frischBestellung.reduce(
-                (
-                    total,
-                    item,
-                    index
-                ) => {
-                    const discrepancyItem =
-                        discrepancyByProduct[
-                            item
-                                ?.frischbestand
-                                ?.name
-                        ];
+        useMemo(
+            () => {
+                return frischBestellung.reduce(
+                    (
+                        total,
+                        item,
+                        index
+                    ) => {
+                        const discrepancyItem =
+                            discrepancyByProduct[
+                                item
+                                    ?.frischbestand
+                                    ?.name
+                            ];
 
-                    if (
-                        item.done !==
-                            false ||
-                        !discrepancyItem ||
-                        Number(
-                            discrepancyItem.zuBestellendeGebinde
-                        ) === 0
-                    ) {
-                        return total;
-                    }
 
-                    const key =
-                        getItemKey(
-                            item,
-                            index
-                        );
-
-                    return (
-                        total +
-                        Number(
-                            amounts[key] ??
+                        if (
+                            item.done !==
+                                false ||
+                            !discrepancyItem ||
+                            Number(
+                                discrepancyItem
+                                    .zuBestellendeGebinde
+                            ) ===
                                 0
-                        ) *
+                        ) {
+                            return total;
+                        }
+
+
+                        const key =
+                            getItemKey(
+                                item,
+                                index
+                            );
+
+
+                        return (
+                            total +
+                            Number(
+                                amounts[key] ??
+                                0
+                            ) *
                             Number(
                                 item
                                     ?.frischbestand
                                     ?.preis ??
-                                    0
+                                0
                             )
-                    );
-                },
-                0
-            );
-        }, [
-            frischBestellung,
-            discrepancyByProduct,
-            amounts,
-        ]);
-
-
-    useEffect(() => {
-        props.onPriceChange?.(
-            totalPrice
+                        );
+                    },
+                    0
+                );
+            },
+            [
+                frischBestellung,
+                discrepancyByProduct,
+                amounts,
+            ]
         );
-    }, [
-        totalPrice,
-        props.onPriceChange,
-    ]);
 
+
+    useEffect(
+        () => {
+            props.onPriceChange?.(
+                totalPrice
+            );
+        },
+        [
+            totalPrice,
+            props.onPriceChange,
+        ]
+    );
+
+
+    // =========================================================================
+    // Step je Einheit
+    // =========================================================================
 
     const getStepValue =
         unit => {
             return (
-                String(unit ?? "")
+                String(
+                    unit ??
+                    ""
+                )
                     .toLowerCase() ===
                 "kg"
                     ? 0.2
@@ -303,95 +461,66 @@ export function FrischEinkauf(props) {
     // Columns
     // =========================================================================
 
-    const columns = useMemo(
-        () => [
-            {
-                header: "Produkt",
-                accessorKey:
-                    "frischbestand.name",
-            },
-            {
-                header: "Preis in €",
-                accessorKey:
-                    "frischbestand.preis",
+    const columns =
+        useMemo(
+            () => [
+                {
+                    header:
+                        "Produkt",
 
-                cell: info => {
-                    const item =
-                        info.row.original;
-
-                    return (
-                        <Stack
-                            direction="row"
-                            spacing={0.5}
-                            alignItems="center"
-                        >
-                            <NumberFormatComponent
-                                value={
-                                    info.getValue()
-                                }
-                            />
-
-                            {item
-                                ?.frischbestand
-                                ?.spezialfallBestelleinheit && (
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    (kg)
-                                </Typography>
-                            )}
-                        </Stack>
-                    );
+                    accessorKey:
+                        "frischbestand.name",
                 },
-            },
-            {
-                header:
-                    "Gebindegröße",
-                accessorKey:
-                    "frischbestand.gebindegroesse",
 
-                cell: info => (
-                    <NumberFormatComponent
-                        value={
-                            info.getValue()
-                        }
-                        includeFractionDigits={
-                            false
-                        }
-                    />
-                ),
-            },
-            {
-                header:
-                    "Bestellmenge",
-                accessorKey:
-                    "bestellmenge",
+                {
+                    header:
+                        "Preis in €",
 
-                cell: info => {
-                    const item =
-                        info.row.original;
+                    accessorKey:
+                        "frischbestand.preis",
 
-                    const difference =
-                        discrepancyByProduct[
-                            item
-                                ?.frischbestand
-                                ?.name
-                        ];
+                    cell:
+                        info => {
+                            const item =
+                                info.row.original;
 
-                    const value =
-                        Number(
-                            difference
-                                ?.zuVielzuWenig ??
-                                0
-                        );
 
-                    return (
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center"
-                        >
+                            return (
+                                <Stack
+                                    direction="row"
+                                    spacing={0.5}
+                                    sx={{ alignItems: "center" }}
+                                >
+                                    <NumberFormatComponent
+                                        value={
+                                            info.getValue()
+                                        }
+                                    />
+
+                                    {item
+                                        ?.frischbestand
+                                        ?.spezialfallBestelleinheit && (
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                        >
+                                            (kg)
+                                        </Typography>
+                                    )}
+                                </Stack>
+                            );
+                        },
+                },
+
+                {
+                    header:
+                        "Gebindegröße",
+
+                    accessorKey:
+                        "frischbestand.gebindegroesse",
+
+                    cell:
+                        info => (
                             <NumberFormatComponent
                                 value={
                                     info.getValue()
@@ -400,187 +529,275 @@ export function FrischEinkauf(props) {
                                     false
                                 }
                             />
+                        ),
+                },
 
-                            {item
-                                ?.frischbestand
-                                ?.spezialfallBestelleinheit &&
-                                " Stück"}
+                {
+                    header:
+                        "Bestellmenge",
 
-                            {difference &&
+                    accessorKey:
+                        "bestellmenge",
+
+                    cell:
+                        info => {
+                            const item =
+                                info.row.original;
+
+
+                            const difference =
+                                discrepancyByProduct[
+                                    item
+                                        ?.frischbestand
+                                        ?.name
+                                ];
+
+
+                            const value =
                                 Number(
-                                    difference.zuBestellendeGebinde
-                                ) !==
-                                    0 &&
-                                value !==
-                                    0 && (
-                                    <Chip
-                                        size="small"
-                                        color={
-                                            value >
-                                            0
-                                                ? "success"
-                                                : "error"
-                                        }
-                                        variant="outlined"
-                                        label={
-                                            <>
-                                                {value >
-                                                0
-                                                    ? "+"
-                                                    : ""}
-                                                <NumberFormatComponent
-                                                    value={
-                                                        value
-                                                    }
-                                                    includeFractionDigits={
-                                                        false
-                                                    }
-                                                />
-                                            </>
-                                        }
-                                    />
-                                )}
-                        </Stack>
-                    );
+                                    difference
+                                        ?.zuVielzuWenig ??
+                                    0
+                                );
+
+
+                            return (
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    sx={{ alignItems: "center" }}
+                                >
+                                    {/*
+                                     * Zahl + Einheit in einem Element: In der
+                                     * Flexbox würde ein loses " Stück" sein
+                                     * Leerzeichen verlieren.
+                                     */}
+                                    <span>
+                                        <NumberFormatComponent
+                                            value={
+                                                info.getValue()
+                                            }
+                                            includeFractionDigits={
+                                                false
+                                            }
+                                        />
+
+                                        {item
+                                            ?.frischbestand
+                                            ?.spezialfallBestelleinheit &&
+                                            " Stück"}
+                                    </span>
+
+
+                                    {difference &&
+                                        Number(
+                                            difference
+                                                .zuBestellendeGebinde
+                                        ) !==
+                                            0 &&
+                                        value !==
+                                            0 && (
+                                            <Chip
+                                                size="small"
+                                                color={
+                                                    value >
+                                                    0
+                                                        ? "success"
+                                                        : "error"
+                                                }
+                                                variant="outlined"
+                                                label={
+                                                    <>
+                                                        {
+                                                            value >
+                                                            0
+                                                                ? "+"
+                                                                : ""
+                                                        }
+
+                                                        <NumberFormatComponent
+                                                            value={
+                                                                value
+                                                            }
+                                                            includeFractionDigits={
+                                                                false
+                                                            }
+                                                        />
+                                                    </>
+                                                }
+                                            />
+                                        )}
+                                </Stack>
+                            );
+                        },
                 },
-            },
-            {
-                id: "menge",
-                header:
-                    "Genommene Menge",
-                enableSorting: false,
 
-                cell: info => {
-                    const item =
-                        info.row.original;
+                {
+                    id:
+                        "menge",
 
-                    const difference =
-                        discrepancyByProduct[
-                            item
-                                ?.frischbestand
-                                ?.name
-                        ];
+                    header:
+                        "Genommene Menge",
 
-                    if (
-                        Number(
-                            difference
-                                ?.zuBestellendeGebinde
-                        ) === 0
-                    ) {
-                        return (
-                            <Typography
-                                variant="body2"
-                                color="error"
-                            >
-                                Kein Gebinde
-                                entstanden
-                            </Typography>
-                        );
-                    }
+                    enableSorting:
+                        false,
 
-                    const index =
-                        frischBestellung.indexOf(
-                            item
-                        );
+                    cell:
+                        info => {
+                            const item =
+                                info.row.original;
 
-                    const key =
-                        getItemKey(
-                            item,
-                            index
-                        );
 
-                    const unavailable =
-                        item
-                            ?.frischbestand
-                            ?.verfuegbarkeit ===
-                        false;
+                            const difference =
+                                discrepancyByProduct[
+                                    item
+                                        ?.frischbestand
+                                        ?.name
+                                ];
 
-                    return (
-                        <TextField
-                            size="small"
-                            type="number"
-                            value={
-                                amounts[key] ??
-                                ""
+
+                            if (
+                                Number(
+                                    difference
+                                        ?.zuBestellendeGebinde
+                                ) ===
+                                0
+                            ) {
+                                return (
+                                    <Typography
+                                        variant="body2"
+                                        color="error"
+                                    >
+                                        Kein Gebinde entstanden
+                                    </Typography>
+                                );
                             }
-                            disabled={
-                                unavailable
-                            }
-                            slotProps={{
-                                htmlInput: {
-                                    min: 0,
 
-                                    step:
-                                        getStepValue(
-                                            item
-                                                ?.frischbestand
-                                                ?.einheit
-                                                ?.name
-                                        ),
-                                },
-                            }}
-                            onChange={event =>
-                                setAmounts(
-                                    previous => ({
-                                        ...previous,
 
-                                        [key]:
-                                            event
-                                                .target
-                                                .value,
-                                    })
-                                )
-                            }
-                            sx={{
-                                width: 110,
-                            }}
-                        />
-                    );
+                            const index =
+                                frischBestellung.indexOf(
+                                    item
+                                );
+
+
+                            const key =
+                                getItemKey(
+                                    item,
+                                    index
+                                );
+
+
+                            const unavailable =
+                                item
+                                    ?.frischbestand
+                                    ?.verfuegbarkeit ===
+                                false;
+
+
+                            return (
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    value={
+                                        amounts[key] ??
+                                        ""
+                                    }
+                                    disabled={
+                                        unavailable
+                                    }
+                                    slotProps={{
+                                        htmlInput: {
+                                            min: 0,
+
+                                            step:
+                                                getStepValue(
+                                                    item
+                                                        ?.frischbestand
+                                                        ?.einheit
+                                                        ?.name
+                                                ),
+                                        },
+                                    }}
+                                    onChange={
+                                        event =>
+                                            setAmounts(
+                                                previous => ({
+                                                    ...previous,
+
+                                                    [key]:
+                                                        event
+                                                            .target
+                                                            .value,
+                                                })
+                                            )
+                                    }
+                                    sx={{
+                                        width: 110,
+                                    }}
+                                />
+                            );
+                        },
                 },
-            },
-            {
-                header: "Einheit",
-                accessorKey:
-                    "frischbestand.einheit.name",
 
-                cell: info => {
-                    const special =
-                        info.row.original
-                            ?.frischbestand
-                            ?.spezialfallBestelleinheit;
+                {
+                    header:
+                        "Einheit",
 
-                    return (
-                        <Typography
-                            variant="body2"
-                            color={
-                                special
-                                    ? "error"
-                                    : "inherit"
-                            }
-                            fontWeight={
-                                special
-                                    ? 700
-                                    : 400
-                            }
-                        >
-                            {info.getValue()}
-                        </Typography>
-                    );
+                    accessorKey:
+                        "frischbestand.einheit.name",
+
+                    cell:
+                        info => {
+                            const special =
+                                info
+                                    .row
+                                    .original
+                                    ?.frischbestand
+                                    ?.spezialfallBestelleinheit;
+
+
+                            return (
+                                <Typography
+                                    variant="body2"
+                                    color={
+                                        special
+                                            ? "error"
+                                            : "inherit"
+                                    }
+                                    sx={{
+                                        fontWeight:
+                                            special
+                                                ? 700
+                                                : 400,
+                                    }}
+                                >
+                                    {
+                                        info.getValue()
+                                    }
+                                </Typography>
+                            );
+                        },
                 },
-            },
-            {
-                header: "Kategorie",
-                accessorKey:
-                    "frischbestand.kategorie.name",
-            },
-        ],
-        [
-            frischBestellung,
-            discrepancyByProduct,
-            amounts,
-        ]
-    );
 
+                {
+                    header:
+                        "Kategorie",
+
+                    accessorKey:
+                        "frischbestand.kategorie.name",
+                },
+            ],
+            [
+                frischBestellung,
+                discrepancyByProduct,
+                amounts,
+            ]
+        );
+
+
+    // =========================================================================
+    // Nur noch nicht erledigte Bestellungen anzeigen
+    // =========================================================================
 
     const visibleOrders =
         useMemo(
@@ -590,13 +807,21 @@ export function FrischEinkauf(props) {
                         item.done ===
                         false
                 ),
-            [frischBestellung]
+            [
+                frischBestellung,
+            ]
         );
 
 
+    // =========================================================================
+    // Table
+    // =========================================================================
+
     const table =
         useReactTable({
-            data: visibleOrders,
+            data:
+                visibleOrders,
+
             columns,
 
             state: {
@@ -615,11 +840,16 @@ export function FrischEinkauf(props) {
 
 
     if (
-        frischBestellung.length === 0
+        frischBestellung.length ===
+        0
     ) {
         return null;
     }
 
+
+    // =========================================================================
+    // Render
+    // =========================================================================
 
     return (
         <TableContainer
@@ -627,7 +857,9 @@ export function FrischEinkauf(props) {
             elevation={0}
             sx={{
                 border: 1,
-                borderColor: "divider",
+                borderColor:
+                    "divider",
+
                 borderRadius: 2,
                 overflowX: "auto",
             }}
@@ -656,43 +888,60 @@ export function FrischEinkauf(props) {
                                                     header.id
                                                 }
                                                 sx={{
-                                                    fontWeight: 700,
+                                                    fontWeight:
+                                                        700,
                                                 }}
                                             >
-                                                {header.column.getCanSort() ? (
-                                                    <TableSortLabel
-                                                        active={
-                                                            Boolean(
-                                                                header.column.getIsSorted()
-                                                            )
-                                                        }
-                                                        direction={
-                                                            header.column.getIsSorted() ===
-                                                            "desc"
-                                                                ? "desc"
-                                                                : "asc"
-                                                        }
-                                                        onClick={
-                                                            header.column.getToggleSortingHandler()
-                                                        }
-                                                    >
-                                                        {flexRender(
+                                                {
+                                                    header
+                                                        .column
+                                                        .getCanSort()
+                                                        ? (
+                                                            <TableSortLabel
+                                                                active={
+                                                                    Boolean(
+                                                                        header
+                                                                            .column
+                                                                            .getIsSorted()
+                                                                    )
+                                                                }
+                                                                direction={
+                                                                    header
+                                                                        .column
+                                                                        .getIsSorted() ===
+                                                                    "desc"
+                                                                        ? "desc"
+                                                                        : "asc"
+                                                                }
+                                                                onClick={
+                                                                    header
+                                                                        .column
+                                                                        .getToggleSortingHandler()
+                                                                }
+                                                            >
+                                                                {
+                                                                    flexRender(
+                                                                        header
+                                                                            .column
+                                                                            .columnDef
+                                                                            .header,
+
+                                                                        header
+                                                                            .getContext()
+                                                                    )
+                                                                }
+                                                            </TableSortLabel>
+                                                        )
+                                                        : flexRender(
                                                             header
                                                                 .column
                                                                 .columnDef
                                                                 .header,
-                                                            header.getContext()
-                                                        )}
-                                                    </TableSortLabel>
-                                                ) : (
-                                                    flexRender(
-                                                        header
-                                                            .column
-                                                            .columnDef
-                                                            .header,
-                                                        header.getContext()
-                                                    )
-                                                )}
+
+                                                            header
+                                                                .getContext()
+                                                        )
+                                                }
                                             </TableCell>
                                         )
                                     )}
@@ -701,63 +950,77 @@ export function FrischEinkauf(props) {
                         )}
                 </TableHead>
 
+
                 <TableBody>
                     {table
                         .getRowModel()
-                        .rows.map(row => {
-                            const item =
-                                row.original;
+                        .rows
+                        .map(
+                            row => {
+                                const item =
+                                    row.original;
 
-                            const difference =
-                                discrepancyByProduct[
+
+                                const difference =
+                                    discrepancyByProduct[
+                                        item
+                                            ?.frischbestand
+                                            ?.name
+                                    ];
+
+
+                                const unavailable =
                                     item
                                         ?.frischbestand
-                                        ?.name
-                                ];
+                                        ?.verfuegbarkeit ===
+                                        false ||
+                                    Number(
+                                        difference
+                                            ?.zuBestellendeGebinde
+                                    ) ===
+                                        0;
 
-                            const unavailable =
-                                item
-                                    ?.frischbestand
-                                    ?.verfuegbarkeit ===
-                                    false ||
-                                Number(
-                                    difference
-                                        ?.zuBestellendeGebinde
-                                ) === 0;
 
-                            return (
-                                <TableRow
-                                    key={row.id}
-                                    hover
-                                    sx={{
-                                        opacity:
-                                            unavailable
-                                                ? 0.5
-                                                : 1,
-                                    }}
-                                >
-                                    {row
-                                        .getVisibleCells()
-                                        .map(
-                                            cell => (
-                                                <TableCell
-                                                    key={
-                                                        cell.id
-                                                    }
-                                                >
-                                                    {flexRender(
-                                                        cell
-                                                            .column
-                                                            .columnDef
-                                                            .cell,
-                                                        cell.getContext()
-                                                    )}
-                                                </TableCell>
-                                            )
-                                        )}
-                                </TableRow>
-                            );
-                        })}
+                                return (
+                                    <TableRow
+                                        key={
+                                            row.id
+                                        }
+                                        hover
+                                        sx={{
+                                            opacity:
+                                                unavailable
+                                                    ? 0.5
+                                                    : 1,
+                                        }}
+                                    >
+                                        {row
+                                            .getVisibleCells()
+                                            .map(
+                                                cell => (
+                                                    <TableCell
+                                                        key={
+                                                            cell.id
+                                                        }
+                                                    >
+                                                        {
+                                                            flexRender(
+                                                                cell
+                                                                    .column
+                                                                    .columnDef
+                                                                    .cell,
+
+                                                                cell
+                                                                    .getContext()
+                                                            )
+                                                        }
+                                                    </TableCell>
+                                                )
+                                            )}
+                                    </TableRow>
+                                );
+                            }
+                        )}
                 </TableBody>
             </Table>
         </TableContainer>

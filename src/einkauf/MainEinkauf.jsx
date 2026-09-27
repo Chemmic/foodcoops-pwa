@@ -31,7 +31,7 @@ import { useApi } from "../ApiService.jsx";
 
 import {
     getUsersOfRole,
-} from "../auth/Keycloak";
+} from "../admin/benutzer/benutzerApi.js";
 
 import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
 
@@ -71,8 +71,8 @@ function PriceRow({
             </Typography>
 
             <Typography
-                fontWeight={600}
                 sx={{
+                    fontWeight: 600,
                     width: "110px",
                     textAlign: "right",
                     whiteSpace: "nowrap",
@@ -310,6 +310,115 @@ export function MainEinkauf() {
 
 
     // =========================================================================
+    // Mails nach dem Einkauf (im Hintergrund)
+    // =========================================================================
+
+    /** Meldung des Backends oder Ersatztext. */
+    const meldungAus =
+        async (
+            response,
+            ersatz
+        ) => {
+            try {
+                return (await response.json())?.message ?? ersatz;
+            } catch {
+                return ersatz;
+            }
+        };
+
+
+    /**
+     * 1. Bestätigung mit Rechnung an die Person, die eingekauft hat
+     * 2. Info an alle mit der Rolle "Einkaufsmanagement" (falls es sie gibt)
+     *
+     * Probleme werden am Ende gesammelt gemeldet.
+     */
+    const mailsVerschicken =
+        async (
+            einkaufId,
+            email
+        ) => {
+            const probleme = [];
+
+            try {
+                const response =
+                    await api.createEinkaufPdf(
+                        einkaufId,
+                        email ?? ""
+                    );
+
+                if (!response.ok) {
+                    probleme.push(
+                        await meldungAus(
+                            response,
+                            "Deine Einkaufsbestätigung konnte nicht verschickt werden."
+                        )
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    "Einkaufsbestätigung fehlgeschlagen:",
+                    error
+                );
+
+                probleme.push(
+                    "Deine Einkaufsbestätigung konnte nicht verschickt werden."
+                );
+            }
+
+
+            try {
+                const users =
+                    (
+                        await getUsersOfRole(
+                            "Einkaufsmanagement"
+                        )
+                    ) ?? [];
+
+                const recipients =
+                    users
+                        .filter(user => Boolean(user.email))
+                        .map(user => ({
+                            email: user.email,
+                            username: user.username,
+                        }));
+
+                if (recipients.length > 0) {
+                    const response =
+                        await api.sendMailToEinkaufsmanagement(
+                            einkaufId,
+                            recipients
+                        );
+
+                    if (!response.ok) {
+                        probleme.push(
+                            await meldungAus(
+                                response,
+                                "Die Mail ans Einkaufsmanagement konnte nicht verschickt werden."
+                            )
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    "Mail ans Einkaufsmanagement fehlgeschlagen:",
+                    error
+                );
+            }
+
+
+            if (probleme.length > 0) {
+                toast.info(
+                    `Der Einkauf ist gespeichert. ${probleme.join(" ")}`,
+                    {
+                        autoClose: 10000,
+                    }
+                );
+            }
+        };
+
+
+    // =========================================================================
     // Einkauf übermitteln
     // =========================================================================
 
@@ -381,6 +490,8 @@ export function MainEinkauf() {
 
                             bestandEntity: {
                                 ...item,
+                                // Chargen verwaltet das Backend selbst
+                                chargen: undefined,
                                 type: "lager",
                             },
                         };
@@ -616,82 +727,14 @@ export function MainEinkauf() {
                 );
 
 
-                // =============================================================
-                // Bestätigungsmail Benutzer
-                // =============================================================
+                // Der Einkauf ist gespeichert – die Mails laufen im Hintergrund,
+                // damit man nicht auf PDF und Mailserver warten muss.
+                setSubmitting(false);
 
-                const emailResponse =
-                    await api.createEinkaufPdf(
-                        responseData.id,
-                        email
-                    );
-
-
-                // =============================================================
-                // Einkaufsmanagement informieren
-                // =============================================================
-
-                let users = [];
-
-                try {
-                    users =
-                        (
-                            await getUsersOfRole(
-                                "Einkaufsmanagement"
-                            )
-                        ) ?? [];
-                } catch (error) {
-                    console.error(
-                        "Einkaufsmanagement konnte nicht geladen werden:",
-                        error
-                    );
-                }
-
-
-                const recipients =
-                    users
-                        .filter(
-                            user =>
-                                Boolean(
-                                    user.email
-                                )
-                        )
-                        .map(user => ({
-                            email:
-                                user.email,
-
-                            username:
-                                user.username,
-                        }));
-
-
-                let managementMailOk =
-                    true;
-
-
-                if (
-                    recipients.length >
-                    0
-                ) {
-                    const mailResponse =
-                        await api.sendMailToEinkaufsmanagement(
-                            responseData.id,
-                            recipients
-                        );
-
-                    managementMailOk =
-                        mailResponse.ok;
-                }
-
-
-                if (
-                    !emailResponse.ok ||
-                    !managementMailOk
-                ) {
-                    toast.info(
-                        "Der Einkauf wurde gespeichert, aber mindestens eine Bestätigungs-E-Mail konnte nicht versendet werden."
-                    );
-                }
+                mailsVerschicken(
+                    responseData.id,
+                    email
+                );
             } catch (error) {
                 console.error(
                     "Fehler beim Übermitteln des Einkaufs:",
@@ -779,9 +822,7 @@ export function MainEinkauf() {
                                 </Alert>
                             ) : (
                                 <Typography
-                                    fontWeight={
-                                        700
-                                    }
+                                    sx={{ fontWeight: 700 }}
                                 >
                                     Frischwaren:{" "}
                                     <NumberFormatComponent
@@ -850,9 +891,7 @@ export function MainEinkauf() {
                                 </Alert>
                             ) : (
                                 <Typography
-                                    fontWeight={
-                                        700
-                                    }
+                                    sx={{ fontWeight: 700 }}
                                 >
                                     Restmengen:{" "}
                                     <NumberFormatComponent
@@ -914,9 +953,7 @@ export function MainEinkauf() {
                                 </Alert>
                             ) : (
                                 <Typography
-                                    fontWeight={
-                                        700
-                                    }
+                                    sx={{ fontWeight: 700 }}
                                 >
                                     Brot:{" "}
                                     <NumberFormatComponent
@@ -977,9 +1014,7 @@ export function MainEinkauf() {
                                 </Alert>
                             ) : (
                                 <Typography
-                                    fontWeight={
-                                        700
-                                    }
+                                    sx={{ fontWeight: 700 }}
                                 >
                                     Lagerware:{" "}
                                     <NumberFormatComponent
@@ -1077,16 +1112,16 @@ export function MainEinkauf() {
                     >
                         <Typography
                             variant="h5"
-                            fontWeight={700}
+                            sx={{ fontWeight: 700 }}
                         >
                             Insgesamt
                         </Typography>
 
                         <Typography
                             variant="h4"
-                            fontWeight={700}
                             color="primary.main"
                             sx={{
+                                fontWeight: 700,
                                 width: "110px",
                                 textAlign: "right",
                                 whiteSpace: "nowrap",

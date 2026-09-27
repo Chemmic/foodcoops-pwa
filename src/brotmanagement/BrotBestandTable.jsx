@@ -189,9 +189,7 @@ function AllergenInfo({
                 <Box>
                     <Typography
                         variant="subtitle2"
-                        fontWeight={
-                            700
-                        }
+                        sx={{ fontWeight: 700 }}
                         gutterBottom
                     >
                         Allergene
@@ -607,16 +605,14 @@ export function BrotBestandTable({
                                                                 "name" ? (
                                                                     <Stack
                                                                         direction="row"
-                                                                        alignItems="center"
+                                                                        sx={{ alignItems: "center" }}
                                                                         spacing={
                                                                             0.5
                                                                         }
                                                                     >
                                                                         <Typography
                                                                             variant="body2"
-                                                                            fontWeight={
-                                                                                600
-                                                                            }
+                                                                            sx={{ fontWeight: 600 }}
                                                                         >
                                                                             {flexRender(
                                                                                 cell

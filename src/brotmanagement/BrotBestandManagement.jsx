@@ -9,6 +9,13 @@ import {
     Typography,
 } from "@mui/material";
 
+import SwapVertOutlinedIcon
+    from "@mui/icons-material/SwapVertOutlined";
+
+import {
+    ReihenfolgeDialog,
+} from "../components/reihenfolge/ReihenfolgeDialog.jsx";
+
 import AddBoxOutlinedIcon
     from "@mui/icons-material/AddBoxOutlined";
 
@@ -44,6 +51,15 @@ export function BrotBestandManagement() {
     const columns =
         React.useMemo(
             () => [
+                {
+                    // Platz in der Liste
+                    header:
+                        "Nr.",
+
+                    accessorKey:
+                        "sortierung",
+                },
+
                 {
                     header:
                         "Produkt",
@@ -461,6 +477,46 @@ export function BrotBestandManagement() {
     // Neues Brotprodukt
     // =========================================================================
 
+    // =========================================================================
+    // Reihenfolge
+    // =========================================================================
+
+    const saveReihenfolge =
+        async ids => {
+            try {
+                const response =
+                    await api.updateBrotBestandReihenfolge(
+                        ids
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+                setData(
+                    await response.json()
+                );
+
+                dispatchModal(null);
+
+                toast.success(
+                    "Die Reihenfolge der Brote wurde gespeichert."
+                );
+            } catch (error) {
+                console.error(
+                    "Fehler beim Speichern der Reihenfolge:",
+                    error
+                );
+
+                toast.error(
+                    "Die Reihenfolge konnte nicht gespeichert werden."
+                );
+            }
+        };
+
+
     const newBrotBestand =
         async newData => {
             const requestData = {
@@ -506,16 +562,10 @@ export function BrotBestandManagement() {
                 }
 
 
-                const created =
-                    await response.json();
+                await response.json();
 
-
-                setData(
-                    current => [
-                        ...current,
-                        created,
-                    ]
-                );
+                // Neu laden: nachfolgende Brote rutschen einen Platz nach unten
+                refresh();
 
 
                 toast.success(
@@ -667,36 +717,62 @@ export function BrotBestandManagement() {
                         2,
                 }}
             >
-                <Button
-                    variant="contained"
-                    startIcon={
-                        <AddBoxOutlinedIcon />
-                    }
-                    onClick={() =>
-                        dispatchModal(
-                            "NewBrotBestandModal"
-                        )
-                    }
-                    sx={{
-                        width: {
-                            xs:
-                                "100%",
-
-                            sm:
-                                "auto",
-                        },
-
-                        minHeight: {
-                            xs:
-                                44,
-
-                            sm:
-                                40,
-                        },
+                <Stack
+                    direction={{
+                        xs: "column",
+                        sm: "row",
                     }}
+                    spacing={1}
                 >
-                    Brotprodukt erstellen
-                </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={
+                            <AddBoxOutlinedIcon />
+                        }
+                        onClick={() =>
+                            dispatchModal(
+                                "NewBrotBestandModal"
+                            )
+                        }
+                        sx={{
+                            minHeight: {
+                                xs:
+                                    44,
+
+                                sm:
+                                    40,
+                            },
+                        }}
+                    >
+                        Brotprodukt erstellen
+                    </Button>
+
+                    <Button
+                        variant="outlined"
+                        startIcon={
+                            <SwapVertOutlinedIcon />
+                        }
+                        disabled={
+                            data.length < 2
+                        }
+                        onClick={() =>
+                            dispatchModal(
+                                "ReihenfolgeDialog"
+                            )
+                        }
+                        sx={{
+                            minHeight: {
+                                xs:
+                                    44,
+
+                                sm:
+                                    40,
+                            },
+                        }}
+                    >
+                        Reihenfolge
+                    </Button>
+                </Stack>
             </Paper>
 
 
@@ -813,6 +889,35 @@ export function BrotBestandManagement() {
                 }
                 create={
                     newBrotBestand
+                }
+                anzahl={
+                    data.length
+                }
+            />
+
+
+            <ReihenfolgeDialog
+                titel="Reihenfolge der Brote"
+                beschreibung="So erscheinen die Brote bei der Bestellung und im PDF – am besten wie in der Liste der Bäckerei. Ziehe ein Brot am Griff oder tippe den gewünschten Platz ein."
+                untertitel={brot =>
+                    brot.gewicht
+                        ? `${brot.gewicht} g`
+                        : null
+                }
+                offen={
+                    modal.type ===
+                    "ReihenfolgeDialog"
+                }
+                produkte={
+                    data
+                }
+                onClose={() =>
+                    dispatchModal(
+                        null
+                    )
+                }
+                onSpeichern={
+                    saveReihenfolge
                 }
             />
         </Stack>

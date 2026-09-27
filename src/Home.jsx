@@ -52,8 +52,7 @@ export function Home() {
                 >
                     <Stack
                         spacing={3}
-                        alignItems="center"
-                        textAlign="center"
+                        sx={{ alignItems: "center", textAlign: "center" }}
                     >
                         <Box
                             component="img"

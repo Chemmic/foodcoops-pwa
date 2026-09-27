@@ -22,6 +22,10 @@ import {
     Brot,
 } from "../brot/Brot.jsx";
 
+import {
+    PFADE,
+} from "../router/pfade.js";
+
 
 export function MainBestellung() {
     const location =
@@ -36,7 +40,7 @@ export function MainBestellung() {
         () => {
             if (
                 location.pathname.startsWith(
-                    "/mainBestellung/brotbestellung"
+                    PFADE.bestellungBrot
                 )
             ) {
                 return "brotbestellung";
@@ -103,7 +107,7 @@ export function MainBestellung() {
                         component={
                             Link
                         }
-                        to="/mainBestellung/bestellung"
+                        to={PFADE.bestellungFrisch}
                     />
 
                     <Tab
@@ -112,7 +116,7 @@ export function MainBestellung() {
                         component={
                             Link
                         }
-                        to="/mainBestellung/brotbestellung"
+                        to={PFADE.bestellungBrot}
                     />
                 </Tabs>
             </Paper>
@@ -120,14 +124,14 @@ export function MainBestellung() {
 
             <Routes>
                 <Route
-                    path="bestellung"
+                    path="frisch"
                     element={
                         <Bestellung />
                     }
                 />
 
                 <Route
-                    path="brotbestellung"
+                    path="brot"
                     element={
                         <Brot />
                     }
@@ -135,14 +139,14 @@ export function MainBestellung() {
 
 
                 {/* ========================================================= */}
-                {/* /mainBestellung                                           */}
+                {/* /bestellung                                               */}
                 {/* ========================================================= */}
 
                 <Route
                     index
                     element={
                         <Navigate
-                            to="/mainBestellung/bestellung"
+                            to={PFADE.bestellungFrisch}
                             replace
                         />
                     }
@@ -157,7 +161,7 @@ export function MainBestellung() {
                     path="*"
                     element={
                         <Navigate
-                            to="/mainBestellung/bestellung"
+                            to={PFADE.bestellungFrisch}
                             replace
                         />
                     }

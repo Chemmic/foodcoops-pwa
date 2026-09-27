@@ -14,7 +14,9 @@ import {
 import {
     Alert,
     Box,
+    Button,
     Chip,
+    Collapse,
     Paper,
     Table,
     TableBody,
@@ -24,7 +26,10 @@ import {
     TableRow,
     TableSortLabel,
     TextField,
+    Typography,
 } from "@mui/material";
+
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { useApi } from "../ApiService.jsx";
 import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
@@ -32,6 +37,16 @@ import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
 
 const getItemKey = (item, index) =>
     item?.id ?? `discrepancy-${index}`;
+
+
+/** Ist von diesem Produkt etwas übrig, das man nehmen kann (zu viel)? */
+const istZuViel = item =>
+    Number(item?.zuVielzuWenig ?? 0) > 0.0005;
+
+
+/** Fehlt etwas (zu wenig)? */
+const istZuWenig = item =>
+    Number(item?.zuVielzuWenig ?? 0) < -0.0005;
 
 
 export function ZuVielZuWenigEinkauf(props) {
@@ -47,10 +62,11 @@ export function ZuVielZuWenigEinkauf(props) {
         setAmounts,
     ] = useState({});
 
+    // Produkte ohne Restmenge: standardmäßig eingeklappt
     const [
-        sorting,
-        setSorting,
-    ] = useState([]);
+        weitereOffen,
+        setWeitereOffen,
+    ] = useState(false);
 
 
     // =========================================================================
@@ -411,39 +427,17 @@ export function ZuVielZuWenigEinkauf(props) {
     );
 
 
-    const table =
-        useReactTable({
-            data: discrepancy,
-            columns,
+    // Oben nur, was man nehmen kann; zu wenig und 0 eingeklappt darunter
+    const mitRestmenge =
+        discrepancy.filter(istZuViel);
 
-            state: {
-                sorting,
-            },
-
-            onSortingChange:
-                setSorting,
-
-            getCoreRowModel:
-                getCoreRowModel(),
-
-            getSortedRowModel:
-                getSortedRowModel(),
-        });
+    const ohneRestmenge = [
+        ...discrepancy.filter(istZuWenig),
+        ...discrepancy.filter(item => !istZuViel(item) && !istZuWenig(item)),
+    ];
 
 
-    const hasRelevantItems =
-        discrepancy.some(
-            item =>
-                Number(
-                    item.zuVielzuWenig
-                ) > 0
-        );
-
-
-    if (
-        discrepancy.length === 0 ||
-        !hasRelevantItems
-    ) {
+    if (discrepancy.length === 0) {
         return null;
     }
 
@@ -468,170 +462,276 @@ export function ZuVielZuWenigEinkauf(props) {
                 die Abweichung −2 kg.
             </Alert>
 
-            <TableContainer
-                component={Paper}
-                elevation={0}
-                sx={{
-                    border: 1,
-                    borderColor:
-                        "divider",
-                    borderRadius: 2,
-                    overflowX: "auto",
-                }}
-            >
-                <Table
-                    stickyHeader
-                    size="small"
+            {mitRestmenge.length > 0 ? (
+                <RestmengenTabelle
+                    data={mitRestmenge}
+                    columns={columns}
+                />
+            ) : (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
                     sx={{
-                        minWidth: 1050,
+                        py: 2,
+                        textAlign: "center",
                     }}
                 >
-                    <TableHead>
-                        {table
-                            .getHeaderGroups()
-                            .map(
-                                headerGroup => (
-                                    <TableRow
-                                        key={
-                                            headerGroup.id
-                                        }
-                                    >
-                                        {headerGroup.headers.map(
-                                            header => {
-                                                const sorted =
-                                                    header.column.getIsSorted();
+                    Aktuell ist von keinem Produkt etwas übrig.
+                </Typography>
+            )}
 
-                                                return (
-                                                    <TableCell
-                                                        key={
-                                                            header.id
-                                                        }
-                                                        sx={{
-                                                            fontWeight: 700,
-                                                        }}
-                                                    >
-                                                        {header.column.getCanSort() ? (
-                                                            <TableSortLabel
-                                                                active={
-                                                                    Boolean(
-                                                                        sorted
-                                                                    )
-                                                                }
-                                                                direction={
-                                                                    sorted ===
-                                                                    "desc"
-                                                                        ? "desc"
-                                                                        : "asc"
-                                                                }
-                                                                onClick={
-                                                                    header.column.getToggleSortingHandler()
-                                                                }
-                                                            >
-                                                                {flexRender(
-                                                                    header
-                                                                        .column
-                                                                        .columnDef
-                                                                        .header,
-                                                                    header.getContext()
-                                                                )}
-                                                            </TableSortLabel>
-                                                        ) : (
-                                                            flexRender(
-                                                                header
-                                                                    .column
-                                                                    .columnDef
-                                                                    .header,
-                                                                header.getContext()
+
+            {ohneRestmenge.length > 0 && (
+                <Box
+                    sx={{
+                        mt: 2,
+                    }}
+                >
+                    <Button
+                        size="small"
+                        color="inherit"
+                        onClick={() =>
+                            setWeitereOffen(offen => !offen)
+                        }
+                        aria-expanded={weitereOffen}
+                        endIcon={
+                            <ExpandMoreIcon
+                                sx={{
+                                    transition: "transform 150ms",
+                                    transform: weitereOffen
+                                        ? "rotate(180deg)"
+                                        : "none",
+                                }}
+                            />
+                        }
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 600,
+                        }}
+                    >
+                        Weitere Produkte – zu wenig oder nichts übrig ({ohneRestmenge.length})
+                    </Button>
+
+                    <Collapse
+                        in={weitereOffen}
+                        timeout="auto"
+                        unmountOnExit
+                    >
+                        <Box
+                            sx={{
+                                mt: 1,
+                            }}
+                        >
+                            <RestmengenTabelle
+                                data={ohneRestmenge}
+                                columns={columns}
+                            />
+                        </Box>
+                    </Collapse>
+                </Box>
+            )}
+        </Box>
+    );
+}
+
+
+// =============================================================================
+// Tabelle (wird für "mit Restmenge" und "weitere" verwendet)
+// =============================================================================
+
+function RestmengenTabelle({
+    data,
+    columns,
+}) {
+    const [
+        sorting,
+        setSorting,
+    ] = useState([]);
+
+    const table =
+        useReactTable({
+            data,
+            columns,
+
+            state: {
+                sorting,
+            },
+
+            onSortingChange:
+                setSorting,
+
+            getCoreRowModel:
+                getCoreRowModel(),
+
+            getSortedRowModel:
+                getSortedRowModel(),
+        });
+
+
+    return (
+    <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{
+            border: 1,
+            borderColor:
+                "divider",
+            borderRadius: 2,
+            overflowX: "auto",
+        }}
+    >
+        <Table
+            stickyHeader
+            size="small"
+            sx={{
+                minWidth: 1050,
+            }}
+        >
+            <TableHead>
+                {table
+                    .getHeaderGroups()
+                    .map(
+                        headerGroup => (
+                            <TableRow
+                                key={
+                                    headerGroup.id
+                                }
+                            >
+                                {headerGroup.headers.map(
+                                    header => {
+                                        const sorted =
+                                            header.column.getIsSorted();
+
+                                        return (
+                                            <TableCell
+                                                key={
+                                                    header.id
+                                                }
+                                                sx={{
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {header.column.getCanSort() ? (
+                                                    <TableSortLabel
+                                                        active={
+                                                            Boolean(
+                                                                sorted
                                                             )
-                                                        )}
-                                                    </TableCell>
-                                                );
-                                            }
-                                        )}
-                                    </TableRow>
-                                )
-                            )}
-                    </TableHead>
-
-                    <TableBody>
-                        {table
-                            .getRowModel()
-                            .rows.map(row => {
-                                const unavailable =
-                                    row
-                                        .original
-                                        ?.bestand
-                                        ?.verfuegbarkeit ===
-                                    false;
-
-                                return (
-                                    <TableRow
-                                        key={
-                                            row.id
-                                        }
-                                        hover
-                                        sx={{
-                                            opacity:
-                                                unavailable
-                                                    ? 0.5
-                                                    : 1,
-                                        }}
-                                    >
-                                        {row
-                                            .getVisibleCells()
-                                            .map(
-                                                cell => (
-                                                    <TableCell
-                                                        key={
-                                                            cell.id
+                                                        }
+                                                        direction={
+                                                            sorted ===
+                                                            "desc"
+                                                                ? "desc"
+                                                                : "asc"
+                                                        }
+                                                        onClick={
+                                                            header.column.getToggleSortingHandler()
                                                         }
                                                     >
-                                                        {cell.column
-                                                            .id ===
-                                                            "zuVielzuWenig" &&
-                                                        Number(
-                                                            cell.getValue()
-                                                        ) !==
-                                                            0 ? (
-                                                            <Chip
-                                                                size="small"
-                                                                color={
-                                                                    Number(
-                                                                        cell.getValue()
-                                                                    ) >
-                                                                    0
-                                                                        ? "warning"
-                                                                        : "info"
+                                                        {flexRender(
+                                                            header
+                                                                .column
+                                                                .columnDef
+                                                                .header,
+                                                            header.getContext()
+                                                        )}
+                                                    </TableSortLabel>
+                                                ) : (
+                                                    flexRender(
+                                                        header
+                                                            .column
+                                                            .columnDef
+                                                            .header,
+                                                        header.getContext()
+                                                    )
+                                                )}
+                                            </TableCell>
+                                        );
+                                    }
+                                )}
+                            </TableRow>
+                        )
+                    )}
+            </TableHead>
+
+            <TableBody>
+                {table
+                    .getRowModel()
+                    .rows.map(row => {
+                        const unavailable =
+                            row
+                                .original
+                                ?.bestand
+                                ?.verfuegbarkeit ===
+                            false;
+
+                        return (
+                            <TableRow
+                                key={
+                                    row.id
+                                }
+                                hover
+                                sx={{
+                                    opacity:
+                                        unavailable
+                                            ? 0.5
+                                            : 1,
+                                }}
+                            >
+                                {row
+                                    .getVisibleCells()
+                                    .map(
+                                        cell => (
+                                            <TableCell
+                                                key={
+                                                    cell.id
+                                                }
+                                            >
+                                                {cell.column
+                                                    .id ===
+                                                    "zuVielzuWenig" &&
+                                                Number(
+                                                    cell.getValue()
+                                                ) !==
+                                                    0 ? (
+                                                    <Chip
+                                                        size="small"
+                                                        color={
+                                                            Number(
+                                                                cell.getValue()
+                                                            ) >
+                                                            0
+                                                                ? "warning"
+                                                                : "info"
+                                                        }
+                                                        label={
+                                                            <NumberFormatComponent
+                                                                value={
+                                                                    cell.getValue()
                                                                 }
-                                                                label={
-                                                                    <NumberFormatComponent
-                                                                        value={
-                                                                            cell.getValue()
-                                                                        }
-                                                                        includeFractionDigits={
-                                                                            false
-                                                                        }
-                                                                    />
+                                                                includeFractionDigits={
+                                                                    false
                                                                 }
                                                             />
-                                                        ) : (
-                                                            flexRender(
-                                                                cell
-                                                                    .column
-                                                                    .columnDef
-                                                                    .cell,
-                                                                cell.getContext()
-                                                            )
-                                                        )}
-                                                    </TableCell>
-                                                )
-                                            )}
-                                    </TableRow>
-                                );
-                            })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Box>
+                                                        }
+                                                    />
+                                                ) : (
+                                                    flexRender(
+                                                        cell
+                                                            .column
+                                                            .columnDef
+                                                            .cell,
+                                                        cell.getContext()
+                                                    )
+                                                )}
+                                            </TableCell>
+                                        )
+                                    )}
+                            </TableRow>
+                        );
+                    })}
+            </TableBody>
+        </Table>
+    </TableContainer>
     );
 }

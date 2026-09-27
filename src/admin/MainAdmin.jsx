@@ -34,6 +34,10 @@ import {
     PdfUebersicht,
 } from "./PdfUebersicht.jsx";
 
+import {
+    PFADE,
+} from "../router/pfade.js";
+
 
 export function MainAdmin() {
     const location =
@@ -51,7 +55,7 @@ export function MainAdmin() {
 
         if (
             path.startsWith(
-                "/mainAdmin/OrderOverview"
+                PFADE.bestelluebersicht
             )
         ) {
             return "OrderOverview";
@@ -60,7 +64,7 @@ export function MainAdmin() {
 
         if (
             path.startsWith(
-                "/mainAdmin/pdfOverview"
+                PFADE.pdfUebersicht
             )
         ) {
             return "pdfOverview";
@@ -69,7 +73,7 @@ export function MainAdmin() {
 
         if (
             path.startsWith(
-                "/mainAdmin/config"
+                PFADE.einstellungen
             )
         ) {
             return "config";
@@ -78,7 +82,7 @@ export function MainAdmin() {
 
         if (
             path.startsWith(
-                "/mainAdmin/deadline"
+                PFADE.deadline
             )
         ) {
             return "deadline";
@@ -127,7 +131,7 @@ export function MainAdmin() {
                         component={
                             Link
                         }
-                        to="/mainAdmin/zuVielzuWenig"
+                        to={PFADE.zuVielZuWenig}
                     />
 
                     <Tab
@@ -136,7 +140,7 @@ export function MainAdmin() {
                         component={
                             Link
                         }
-                        to="/mainAdmin/OrderOverview"
+                        to={PFADE.bestelluebersicht}
                     />
 
                     <Tab
@@ -145,7 +149,7 @@ export function MainAdmin() {
                         component={
                             Link
                         }
-                        to="/mainAdmin/pdfOverview"
+                        to={PFADE.pdfUebersicht}
                     />
 
                     <Tab
@@ -154,7 +158,7 @@ export function MainAdmin() {
                         component={
                             Link
                         }
-                        to="/mainAdmin/config"
+                        to={PFADE.einstellungen}
                     />
 
                     <Tab
@@ -163,7 +167,7 @@ export function MainAdmin() {
                         component={
                             Link
                         }
-                        to="/mainAdmin/deadline"
+                        to={PFADE.deadline}
                     />
                 </Tabs>
             </Paper>
@@ -171,28 +175,28 @@ export function MainAdmin() {
 
             <Routes>
                 <Route
-                    path="zuVielzuWenig"
+                    path="zu-viel-zu-wenig"
                     element={
                         <Kontrolle />
                     }
                 />
 
                 <Route
-                    path="OrderOverview"
+                    path="bestelluebersicht"
                     element={
                         <OrderOverview />
                     }
                 />
 
                 <Route
-                    path="pdfOverview"
+                    path="pdf"
                     element={
                         <PdfUebersicht />
                     }
                 />
 
                 <Route
-                    path="config"
+                    path="einstellungen"
                     element={
                         <AdminConfig />
                     }
@@ -205,16 +209,15 @@ export function MainAdmin() {
                     }
                 />
 
-
                 {/* ========================================================= */}
-                {/* /mainAdmin                                                */}
+                {/* /konfiguration                                            */}
                 {/* ========================================================= */}
 
                 <Route
                     index
                     element={
                         <Navigate
-                            to="/mainAdmin/zuVielzuWenig"
+                            to={PFADE.zuVielZuWenig}
                             replace
                         />
                     }
@@ -229,7 +232,7 @@ export function MainAdmin() {
                     path="*"
                     element={
                         <Navigate
-                            to="/mainAdmin/zuVielzuWenig"
+                            to={PFADE.zuVielZuWenig}
                             replace
                         />
                     }

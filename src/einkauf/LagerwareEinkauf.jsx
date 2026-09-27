@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 
 import {
+    Box,
     Paper,
     Table,
     TableBody,
@@ -21,12 +22,25 @@ import {
     TableRow,
     TableSortLabel,
     TextField,
+    Typography,
 } from "@mui/material";
 
 import { toast } from "react-toastify";
 
 import { useApi } from "../ApiService.jsx";
-import NumberFormatComponent from "../logic/NumberFormatComponent.jsx";
+
+import {
+    euro,
+    zahl,
+} from "../historie/format.js";
+
+import {
+    preisFuerProdukt,
+} from "../lager/chargen.js";
+
+import {
+    LagerPreis,
+} from "../lager/LagerPreis.jsx";
 
 
 const getItemKey = (item, index) =>
@@ -72,9 +86,12 @@ export function LagerwareEinkauf(props) {
                     const data =
                         await response.json();
 
+                    // Backend liefert eine Liste (früher HAL mit _embedded)
                     const products =
-                        data?._embedded
-                            ?.produktRepresentationList;
+                        Array.isArray(data)
+                            ? data
+                            : data?._embedded
+                                ?.produktRepresentationList;
 
                     if (
                         active &&
@@ -152,16 +169,16 @@ export function LagerwareEinkauf(props) {
                             index
                         );
 
+                    // Ältere Lieferungen zuerst – ggf. zu altem Preis
                     return (
                         total +
-                        Number(
-                            amounts[key] ??
-                                0
-                        ) *
+                        preisFuerProdukt(
+                            item,
                             Number(
-                                item.preis ??
+                                amounts[key] ??
                                     0
                             )
+                        ).betrag
                     );
                 },
                 0
@@ -245,13 +262,57 @@ export function LagerwareEinkauf(props) {
                 header: "Preis in €",
                 accessorKey: "preis",
 
-                cell: info => (
-                    <NumberFormatComponent
-                        value={
-                            info.getValue()
-                        }
-                    />
-                ),
+                // Bei Ware zu mehreren Preisen: erst der alte, dann der neue
+                cell: info => {
+                    const item =
+                        info.row.original;
+
+                    const index =
+                        produkt.indexOf(
+                            item
+                        );
+
+                    const menge =
+                        Number(
+                            amounts[
+                                getItemKey(
+                                    item,
+                                    index
+                                )
+                            ] ?? 0
+                        );
+
+                    const { betrag, teile } =
+                        preisFuerProdukt(
+                            item,
+                            menge
+                        );
+
+                    return (
+                        <Box>
+                            <LagerPreis
+                                produkt={item}
+                            />
+
+                            {teile.length > 1 && (
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                        display: "block",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    {teile
+                                        .map(t => `${zahl(t.menge)} × ${euro(t.preis)}`)
+                                        .join(" + ")}
+                                    {" = "}
+                                    {euro(betrag)}
+                                </Typography>
+                            )}
+                        </Box>
+                    );
+                },
             },
             {
                 id: "menge",

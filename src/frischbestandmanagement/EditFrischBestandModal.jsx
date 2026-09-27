@@ -180,7 +180,7 @@ export function EditFrischBestandModal(
                 <Box>
                     <Typography
                         variant="subtitle2"
-                        fontWeight={700}
+                        sx={{ fontWeight: 700 }}
                         gutterBottom
                     >
                         Spezialfall
@@ -348,7 +348,7 @@ export function EditFrischBestandModal(
                 <Stack
                     key={accessor}
                     direction="row"
-                    alignItems="center"
+                    sx={{ alignItems: "center" }}
                     spacing={0.5}
                 >
                     <FormControlLabel

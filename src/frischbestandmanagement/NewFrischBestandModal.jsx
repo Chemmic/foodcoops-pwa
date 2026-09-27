@@ -148,11 +148,16 @@ export function NewFrischBestandModal(
         columns = [],
         einheiten = [],
         kategorien = [],
+        anzahl = 0,
     } = props;
 
 
     const [newData, setNewData] =
         React.useState({});
+
+    // Platz in der Liste (1 = oben); leer = ans Ende
+    const [platz, setPlatz] =
+        React.useState("");
 
 
     const initial = React.useMemo(
@@ -166,6 +171,7 @@ export function NewFrischBestandModal(
 
     const close = () => {
         setNewData({});
+        setPlatz("");
         props.close();
     };
 
@@ -219,7 +225,9 @@ export function NewFrischBestandModal(
                 accessor ===
                     "einheit.name" ||
                 accessor ===
-                    "kategorie.name"
+                    "kategorie.name" ||
+                accessor ===
+                    "sortierung"
             ) {
                 continue;
             }
@@ -271,6 +279,15 @@ export function NewFrischBestandModal(
         }
 
 
+        const gewuenscht =
+            Number(platz);
+
+        result.sortierung =
+            platz !== "" && gewuenscht >= 1
+                ? Math.round(gewuenscht)
+                : null;
+
+
         props.create(result);
 
         close();
@@ -285,7 +302,7 @@ export function NewFrischBestandModal(
                 <Box>
                     <Typography
                         variant="subtitle2"
-                        fontWeight={700}
+                        sx={{ fontWeight: 700 }}
                         gutterBottom
                     >
                         Spezialfall
@@ -364,7 +381,7 @@ export function NewFrischBestandModal(
                 <Stack
                     key={accessor}
                     direction="row"
-                    alignItems="center"
+                    sx={{ alignItems: "center" }}
                     spacing={0.5}
                 >
                     <FormControlLabel
@@ -545,7 +562,9 @@ export function NewFrischBestandModal(
                 .filter(
                     ([accessor]) =>
                         accessor !==
-                        "kategorie.id"
+                        "kategorie.id" &&
+                        accessor !==
+                        "sortierung"
                 )
                 .map(
                     ([
@@ -557,6 +576,27 @@ export function NewFrischBestandModal(
                             field
                         )
                 )}
+
+            <TextField
+                fullWidth
+                label="Platz in der Liste"
+                type="number"
+                value={platz}
+                onChange={event =>
+                    setPlatz(
+                        event.target.value
+                    )
+                }
+                slotProps={{
+                    htmlInput: {
+                        min: 1,
+                        max: anzahl + 1,
+                    },
+                }}
+                helperText={
+                    `Wie in der Liste des Händlers: 1 = ganz oben. Leer lassen = ans Ende (Platz ${anzahl + 1}).`
+                }
+            />
         </Stack>
     );
 

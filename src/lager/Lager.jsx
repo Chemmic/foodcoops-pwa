@@ -19,20 +19,35 @@ import {
 } from "react-toastify";
 
 import {
-    jsPDF,
-} from "jspdf";
-
-import {
-    autoTable,
-} from "jspdf-autotable";
-
-import {
     LagerTable,
 } from "./LagerTable.jsx";
 
 import {
     EditProduktModal,
 } from "./EditProduktModal.jsx";
+
+import {
+    EinlagernDialog,
+} from "./EinlagernDialog.jsx";
+
+import {
+    LagerPreis,
+} from "./LagerPreis.jsx";
+
+import {
+    einkaufsliste,
+} from "./einkaufsliste.js";
+
+import {
+    einkaufslisteAlsPdf,
+} from "./einkaufslistePdf.js";
+
+import {
+    ReihenfolgeDialog,
+} from "../components/reihenfolge/ReihenfolgeDialog.jsx";
+
+import SwapVertOutlinedIcon
+    from "@mui/icons-material/SwapVertOutlined";
 
 import {
     EditKategorieModal,
@@ -67,6 +82,15 @@ export function Lager() {
     const columns =
         React.useMemo(
             () => [
+                {
+                    // Platz in der Liste
+                    header:
+                        "Nr.",
+
+                    accessorKey:
+                        "sortierung",
+                },
+
                 {
                     header:
                         "Name",
@@ -138,11 +162,12 @@ export function Lager() {
                     accessorKey:
                         "preis",
 
+                    // Bei Ware zu mehreren Preisen: der als Nächstes verkaufte
                     cell:
                         info => (
-                            <NumberFormatComponent
-                                value={
-                                    info.getValue()
+                            <LagerPreis
+                                produkt={
+                                    info.row.original
                                 }
                             />
                         ),
@@ -420,7 +445,8 @@ export function Lager() {
     const persistProdukt =
         async (
             produkt,
-            patch
+            patch,
+            optionen = {}
         ) => {
             if (
                 !produkt
@@ -460,12 +486,17 @@ export function Lager() {
             delete changedData
                 ._links;
 
+            // Chargen verwaltet das Backend selbst
+            delete changedData
+                .chargen;
+
 
             try {
                 const response =
                     await api.updateProdukt(
                         produkt.id,
-                        changedData
+                        changedData,
+                        optionen
                     );
 
 
@@ -499,6 +530,48 @@ export function Lager() {
                     `Beim Aktualisieren von „${produkt.name}“ ist ein Fehler aufgetreten.`
                 );
             }
+        };
+
+
+    // =========================================================================
+    // Einlagern
+    // =========================================================================
+
+    const einlagern =
+        async (
+            produkt,
+            menge,
+            preis
+        ) => {
+            const response =
+                await api.einlagernProdukt(
+                    produkt.id,
+                    menge,
+                    preis
+                );
+
+            if (!response.ok) {
+                let message = null;
+
+                try {
+                    message =
+                        (await response.json())?.message;
+                } catch {
+                    // keine JSON-Antwort
+                }
+
+                throw new Error(
+                    message ??
+                        `„${produkt.name}“ konnte nicht eingelagert werden.`
+                );
+            }
+
+            toast.success(
+                `${menge} ${produkt.lagerbestand?.einheit?.name ?? ""} ${produkt.name} eingelagert.`
+            );
+
+            dispatchModal(null);
+            refresh();
         };
 
 
@@ -709,16 +782,9 @@ export function Lager() {
                 }
 
 
-                const created =
-                    await response.json();
+                await response.json();
 
-
-                setData(
-                    previous => [
-                        ...previous,
-                        created,
-                    ]
-                );
+                refresh();
 
 
                 toast.success(
@@ -857,117 +923,62 @@ export function Lager() {
 
     const createPDF =
         () => {
-            const doc =
-                new jsPDF();
-
-
-            const currentDate =
-                new Date();
-
-
-            const formattedDate =
-                currentDate.toLocaleDateString(
-                    "de-DE"
+            const liste =
+                einkaufsliste(
+                    data
                 );
 
+            if (liste.anzahl === 0) {
+                toast.info(
+                    "Alles aufgefüllt – im Moment muss nichts gekauft werden."
+                );
 
-            const fileDate = [
-                currentDate.getDate(),
-                currentDate.getMonth() + 1,
-                currentDate.getFullYear(),
-            ].join(
-                "-"
+                return;
+            }
+
+            einkaufslisteAlsPdf(
+                liste
             );
+        };
 
 
-            doc.text(
-                `Einkaufsliste Lager ${formattedDate}`,
-                14,
-                10
-            );
+    // =========================================================================
+    // Reihenfolge
+    // =========================================================================
 
-
-            const pdfData =
-                data
-                    .filter(
-                        item =>
-                            !Object.prototype
-                                .hasOwnProperty
-                                .call(
-                                    item,
-                                    "produkte"
-                                )
-                    )
-                    .map(
-                        product => {
-                            const soll =
-                                Number(
-                                    product
-                                        ?.lagerbestand
-                                        ?.sollLagerbestand ??
-                                    0
-                                );
-
-
-                            const ist =
-                                Number(
-                                    product
-                                        ?.lagerbestand
-                                        ?.istLagerbestand ??
-                                    0
-                                );
-
-
-                            return {
-                                productName:
-                                    product.name,
-
-                                differenz:
-                                    soll -
-                                    ist,
-                            };
-                        }
-                    )
-                    .filter(
-                        ({
-                            differenz,
-                        }) =>
-                            differenz >
-                            0
-                    )
-                    .map(
-                        ({
-                            productName,
-                            differenz,
-                        }) => [
-                            productName,
-                            differenz,
-                        ]
+    const saveReihenfolge =
+        async ids => {
+            try {
+                const response =
+                    await api.updateProduktReihenfolge(
+                        ids
                     );
 
-
-            autoTable(
-                doc,
-                {
-                    head: [
-                        [
-                            "Produktname",
-                            "Fehlende Menge",
-                        ],
-                    ],
-
-                    body:
-                        pdfData,
-
-                    startY:
-                        18,
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
                 }
-            );
 
+                setData(
+                    await response.json()
+                );
 
-            doc.save(
-                `Einkaufsliste-Lager-${fileDate}.pdf`
-            );
+                dispatchModal(null);
+
+                toast.success(
+                    "Die Reihenfolge des Lagers wurde gespeichert."
+                );
+            } catch (error) {
+                console.error(
+                    "Fehler beim Speichern der Reihenfolge:",
+                    error
+                );
+
+                toast.error(
+                    "Die Reihenfolge konnte nicht gespeichert werden."
+                );
+            }
         };
 
 
@@ -1111,7 +1122,7 @@ export function Lager() {
                                 "repeat(2, minmax(0, 1fr))",
 
                             sm:
-                                "repeat(4, auto)",
+                                "repeat(5, auto)",
                         },
 
                         gap:
@@ -1227,6 +1238,33 @@ export function Lager() {
                     >
                         Einkaufsliste
                     </Button>
+
+
+                    <Button
+                        variant="outlined"
+                        startIcon={
+                            <SwapVertOutlinedIcon />
+                        }
+                        disabled={
+                            data.length < 2
+                        }
+                        onClick={() =>
+                            dispatchModal(
+                                "ReihenfolgeDialog"
+                            )
+                        }
+                        sx={{
+                            gridColumn: {
+                                xs:
+                                    "1 / -1",
+
+                                sm:
+                                    "auto",
+                            },
+                        }}
+                    >
+                        Reihenfolge
+                    </Button>
                 </Box>
             </Paper>
 
@@ -1326,6 +1364,12 @@ export function Lager() {
                 deleteProdukt={
                     deleteProdukt
                 }
+                onEinlagern={produkt =>
+                    dispatchModal(
+                        "EinlagernDialog",
+                        produkt
+                    )
+                }
                 einheiten={
                     einheiten
                 }
@@ -1334,6 +1378,48 @@ export function Lager() {
                 }
                 produkt={
                     modal.entity
+                }
+            />
+
+
+            <ReihenfolgeDialog
+                titel="Reihenfolge im Lager"
+                offen={
+                    modal.type ===
+                    "ReihenfolgeDialog"
+                }
+                produkte={
+                    data
+                }
+                onClose={() =>
+                    dispatchModal(
+                        null
+                    )
+                }
+                onSpeichern={
+                    saveReihenfolge
+                }
+            />
+
+
+            <EinlagernDialog
+                offen={
+                    modal.type ===
+                    "EinlagernDialog"
+                }
+                produkt={
+                    modal.type ===
+                    "EinlagernDialog"
+                        ? modal.entity
+                        : null
+                }
+                onClose={() =>
+                    dispatchModal(
+                        null
+                    )
+                }
+                onEinlagern={
+                    einlagern
                 }
             />
 
@@ -1359,6 +1445,9 @@ export function Lager() {
                 }
                 einheiten={
                     einheiten
+                }
+                anzahl={
+                    data.length
                 }
             />
 

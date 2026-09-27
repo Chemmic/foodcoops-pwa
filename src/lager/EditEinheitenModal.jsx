@@ -72,7 +72,7 @@ export function EditEinheitenModal(
             <Box>
                 <Typography
                     variant="subtitle1"
-                    fontWeight={700}
+                    sx={{ fontWeight: 700 }}
                     gutterBottom
                 >
                     Neue Einheit
@@ -124,7 +124,7 @@ export function EditEinheitenModal(
             <Box>
                 <Typography
                     variant="subtitle1"
-                    fontWeight={700}
+                    sx={{ fontWeight: 700 }}
                     gutterBottom
                 >
                     Bestehende Einheiten

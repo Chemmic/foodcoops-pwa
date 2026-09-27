@@ -21,6 +21,10 @@ import {
     hasAnyRole,
 } from "./AuthorizedFunction";
 
+import {
+    PFADE,
+} from "../router/pfade.js";
+
 
 function LoadingScreen() {
     return (
@@ -36,7 +40,7 @@ function LoadingScreen() {
         >
             <Stack
                 spacing={2}
-                alignItems="center"
+                sx={{ alignItems: "center" }}
             >
                 <CircularProgress />
 
@@ -109,7 +113,7 @@ function UnauthorizedRedirect({
 
     return (
         <Navigate
-            to="/home"
+            to={PFADE.start}
             replace
             state={{
                 from:
@@ -127,7 +131,7 @@ function UnauthorizedRedirect({
  * Verwendung:
  *
  * <Route
- *     path="/mainAdmin/*"
+ *     path="/konfiguration/*"
  *     element={
  *         <PrivateRoute
  *             roles={["Einkäufer"]}

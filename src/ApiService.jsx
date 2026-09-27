@@ -1,53 +1,11 @@
 import React from "react";
 
 
-// =============================================================================
-// Backend URL
-// =============================================================================
-//
-// Lokal:
-//
-//   VITE_BACKEND_URL=http://localhost:8080/
-//
-// Produktion:
-//
-//   VITE_BACKEND_URL=/api/
-//
-// Der abschließende Slash wird hier entfernt.
-// apiUrl(...) setzt die Pfade danach sauber zusammen.
-//
-// =============================================================================
-
-const BACKEND_URL = (
-    import.meta.env.VITE_BACKEND_URL || "/api/"
-).replace(/\/+$/, "");
-
-
-const apiUrl = (...parts) => {
-    const path = parts
-        .filter(
-            part =>
-                part !== undefined &&
-                part !== null &&
-                part !== ""
-        )
-        .map(
-            part =>
-                String(part)
-                    .replace(/^\/+/, "")
-                    .replace(/\/+$/, "")
-        )
-        .join("/");
-
-    return path
-        ? `${BACKEND_URL}/${path}`
-        : BACKEND_URL;
-};
-
-
-const JSON_HEADERS = {
-    "Content-Type": "application/json"
-};
+import {
+    apiUrl,
+    authFetch,
+    JSON_HEADERS,
+} from "./apiClient.js";
 
 
 // =============================================================================
@@ -112,7 +70,7 @@ const BYTE = "byte";
 // =============================================================================
 
 const createProdukt = (data) =>
-    fetch(
+    authFetch(
         apiUrl(PRODUKTE),
         {
             method: "POST",
@@ -129,7 +87,7 @@ const createProdukt = (data) =>
 const readProdukt = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             PRODUKTE,
             id
@@ -140,7 +98,7 @@ const readProdukt = (
 const deleteProdukt = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             PRODUKTE,
             id
@@ -152,15 +110,22 @@ const deleteProdukt = (
     );
 
 
+/**
+ * preisFuerBestand: neuer Preis gilt auch für die schon vorhandene Ware
+ * (sonst behält sie ihren alten Preis und wird zuerst verkauft).
+ */
 const updateProdukt = (
     id,
-    changedData
+    changedData,
+    {
+        preisFuerBestand = false,
+    } = {}
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             PRODUKTE,
             id
-        ),
+        ) + (preisFuerBestand ? "?preisFuerBestand=true" : ""),
         {
             method: "PUT",
             headers: JSON_HEADERS,
@@ -172,6 +137,30 @@ const updateProdukt = (
     );
 
 
+/** Neue Lieferung einlagern – vorhandene Ware behält ihren Preis. */
+const einlagernProdukt = (
+    id,
+    menge,
+    preis
+) =>
+    authFetch(
+        apiUrl(
+            PRODUKTE,
+            id,
+            "einlagern"
+        ),
+        {
+            method: "POST",
+            headers: JSON_HEADERS,
+
+            body: JSON.stringify({
+                menge,
+                preis,
+            })
+        }
+    );
+
+
 // =============================================================================
 // Kategorie
 // =============================================================================
@@ -179,7 +168,7 @@ const updateProdukt = (
 const readKategorie = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             KATEGORIEN,
             id
@@ -192,7 +181,7 @@ const createKategorie = (
     icon,
     mixable
 ) =>
-    fetch(
+    authFetch(
         apiUrl(KATEGORIEN),
         {
             method: "POST",
@@ -212,7 +201,7 @@ const updateKategorie = (
     id,
     name
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             KATEGORIEN,
             id
@@ -231,7 +220,7 @@ const updateKategorie = (
 const deleteKategorie = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             KATEGORIEN,
             id
@@ -250,7 +239,7 @@ const deleteKategorie = (
 const readEinheit = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINHEITEN,
             id
@@ -261,7 +250,7 @@ const readEinheit = (
 const createEinheit = (
     name
 ) =>
-    fetch(
+    authFetch(
         apiUrl(EINHEITEN),
         {
             method: "POST",
@@ -278,7 +267,7 @@ const createEinheit = (
 const deleteEinheit = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINHEITEN,
             id
@@ -295,7 +284,7 @@ const deleteEinheit = (
 // =============================================================================
 
 const readFrischBestellung = () =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTELLUNG
         )
@@ -305,7 +294,7 @@ const readFrischBestellung = () =>
 const createFrischBestellung = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTELLUNG
         ),
@@ -325,7 +314,7 @@ const updateFrischBestellung = (
     data,
     frischBestellungId
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTELLUNG,
             frischBestellungId
@@ -349,7 +338,7 @@ const updateFrischBestellung = (
  */
 const readFrischBestellungProPerson =
     (personId) =>
-        fetch(
+        authFetch(
             apiUrl(
                 FRISCHBESTELLUNG,
                 CURRENT_ORDERS,
@@ -366,7 +355,7 @@ const readFrischBestellungProPerson =
  */
 const readFrischBestellungVorherigeProPerson =
     (personId) =>
-        fetch(
+        authFetch(
             apiUrl(
                 FRISCHBESTELLUNG,
                 PREVIOUS,
@@ -384,7 +373,7 @@ const readFrischBestellungVorherigeProPerson =
  */
 const readFrischBestellungProProdukt =
     () =>
-        fetch(
+        authFetch(
             apiUrl(
                 FRISCHBESTELLUNG,
                 CURRENT_ORDERS,
@@ -400,7 +389,7 @@ const readFrischBestellungProProdukt =
  */
 const readFrischBestellungHistorieProPerson =
     (personId) =>
-        fetch(
+        authFetch(
             apiUrl(
                 FRISCHBESTELLUNG,
                 PERSON,
@@ -412,7 +401,7 @@ const readFrischBestellungHistorieProPerson =
 const deleteFrischBestellung = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTELLUNG,
             id
@@ -431,7 +420,7 @@ const deleteFrischBestellung = (
 const readFrischBestand = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTAND,
             id
@@ -442,7 +431,7 @@ const readFrischBestand = (
 const createFrischBestand = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTAND
         ),
@@ -458,11 +447,27 @@ const createFrischBestand = (
     );
 
 
+/** Reihenfolge der Frischwaren: IDs von oben nach unten. */
+const updateFrischBestandReihenfolge = ids =>
+    authFetch(
+        apiUrl(
+            FRISCHBESTAND,
+            "reihenfolge"
+        ),
+        {
+            method: "PUT",
+            headers: JSON_HEADERS,
+
+            body: JSON.stringify(ids)
+        }
+    );
+
+
 const updateFrischBestand = (
     id,
     changedData
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTAND,
             id
@@ -481,7 +486,7 @@ const updateFrischBestand = (
 const deleteFrischBestand = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             FRISCHBESTAND,
             id
@@ -498,7 +503,7 @@ const deleteFrischBestand = (
 // =============================================================================
 
 const readBrotBestellung = () =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTELLUNG
         )
@@ -508,7 +513,7 @@ const readBrotBestellung = () =>
 const createBrotBestellung = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTELLUNG
         ),
@@ -528,7 +533,7 @@ const updateBrotBestellung = (
     data,
     brotBestellungId
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTELLUNG,
             brotBestellungId
@@ -552,7 +557,7 @@ const updateBrotBestellung = (
  */
 const readBrotBestellungProPerson =
     (personId) =>
-        fetch(
+        authFetch(
             apiUrl(
                 BROTBESTELLUNG,
                 CURRENT_ORDERS,
@@ -569,7 +574,7 @@ const readBrotBestellungProPerson =
  */
 const readBrotBestellungVorherigeProPerson =
     (personId) =>
-        fetch(
+        authFetch(
             apiUrl(
                 BROTBESTELLUNG,
                 PREVIOUS,
@@ -587,7 +592,7 @@ const readBrotBestellungVorherigeProPerson =
  */
 const readBrotBestellungProProdukt =
     () =>
-        fetch(
+        authFetch(
             apiUrl(
                 BROTBESTELLUNG,
                 CURRENT_ORDERS,
@@ -603,7 +608,7 @@ const readBrotBestellungProProdukt =
  */
 const readBrotBestellungHistorieProPerson =
     (personId) =>
-        fetch(
+        authFetch(
             apiUrl(
                 BROTBESTELLUNG,
                 PERSON,
@@ -615,7 +620,7 @@ const readBrotBestellungHistorieProPerson =
 const deleteBrotBestellung = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTELLUNG,
             id
@@ -634,7 +639,7 @@ const deleteBrotBestellung = (
 const readBrotBestand = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTAND,
             id
@@ -645,7 +650,7 @@ const readBrotBestand = (
 const createBrotBestand = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTAND
         ),
@@ -661,11 +666,43 @@ const createBrotBestand = (
     );
 
 
+/** Reihenfolge der Brote: IDs von oben nach unten. */
+const updateBrotBestandReihenfolge = ids =>
+    authFetch(
+        apiUrl(
+            BROTBESTAND,
+            "reihenfolge"
+        ),
+        {
+            method: "PUT",
+            headers: JSON_HEADERS,
+
+            body: JSON.stringify(ids)
+        }
+    );
+
+
+/** Reihenfolge der Lagerprodukte: IDs von oben nach unten. */
+const updateProduktReihenfolge = ids =>
+    authFetch(
+        apiUrl(
+            PRODUKTE,
+            "reihenfolge"
+        ),
+        {
+            method: "PUT",
+            headers: JSON_HEADERS,
+
+            body: JSON.stringify(ids)
+        }
+    );
+
+
 const updateBrotBestand = (
     id,
     changedData
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTAND,
             id
@@ -684,7 +721,7 @@ const updateBrotBestand = (
 const deleteBrotBestand = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BROTBESTAND,
             id
@@ -703,7 +740,7 @@ const deleteBrotBestand = (
 const readDeadline = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             DEADLINE,
             id
@@ -712,7 +749,7 @@ const readDeadline = (
 
 
 const readLastDeadline = () =>
-    fetch(
+    authFetch(
         apiUrl(
             DEADLINE,
             LAST
@@ -723,7 +760,7 @@ const readLastDeadline = () =>
 const readCurrentDeadline = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             DEADLINE,
             CURRENT,
@@ -735,7 +772,7 @@ const readCurrentDeadline = (
 const createDeadline = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             DEADLINE
         ),
@@ -762,7 +799,7 @@ const createDeadline = (
 const readPreisHistorie = (
     bestandId
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             PREISHISTORIE,
             BESTAND,
@@ -778,7 +815,7 @@ const readPreisHistorie = (
 const readEinkauf = (
     id = undefined
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINKAUF,
             id
@@ -790,7 +827,7 @@ const createEinkaufPdf = (
     id,
     email
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINKAUF,
             PDF,
@@ -807,7 +844,7 @@ const createEinkaufPdf = (
 const createEinkauf = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINKAUF
         ),
@@ -826,7 +863,7 @@ const createEinkauf = (
 const deleteEinkauf = (
     id
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINKAUF,
             id
@@ -841,7 +878,7 @@ const deleteEinkauf = (
 const createBestandBuyObject = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             BESTANDBUYOBJECT
         ),
@@ -861,7 +898,7 @@ const sendMailToEinkaufsmanagement = (
     id,
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EINKAUF,
             MAILTOEINKAUFSMANAGEMENT,
@@ -883,7 +920,7 @@ const sendMailToEinkaufsmanagement = (
 // =============================================================================
 
 const readBestellUebersicht = () =>
-    fetch(
+    authFetch(
         apiUrl(
             BESTELLUEBERSICHT,
             LAST
@@ -896,7 +933,7 @@ const readBestellUebersicht = () =>
 // =============================================================================
 
 const readDiscrepancyOverviwe = () =>
-    fetch(
+    authFetch(
         apiUrl(
             BESTELLUEBERSICHT,
             LAST
@@ -908,7 +945,7 @@ const updateDiscrepancy = (
     id,
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             GEBINDE,
             DISCREPANCY,
@@ -926,7 +963,7 @@ const updateDiscrepancy = (
 
 const addDiscrepancyToLastOrderList =
     (data) =>
-        fetch(
+        authFetch(
             apiUrl(
                 GEBINDE,
                 DISCREPANCY,
@@ -948,7 +985,7 @@ const addDiscrepancyToLastOrderList =
 // =============================================================================
 
 const readConfig = () =>
-    fetch(
+    authFetch(
         apiUrl(
             CONFIG
         )
@@ -958,7 +995,7 @@ const readConfig = () =>
 const updateConfig = (
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             CONFIG
         ),
@@ -978,7 +1015,7 @@ const updateConfig = (
 // =============================================================================
 
 const readGebindeOverview = () =>
-    fetch(
+    authFetch(
         apiUrl(
             GEBINDE
         )
@@ -989,7 +1026,7 @@ const updateGebindeOverview = (
     id,
     data
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             GEBINDE,
             DISCREPANCY,
@@ -1011,7 +1048,7 @@ const updateGebindeOverview = (
 
 const sendTotalBestellUebersicht =
     (email) =>
-        fetch(
+        authFetch(
             apiUrl(
                 EMAIL,
                 SEND,
@@ -1028,7 +1065,7 @@ const sendTotalBestellUebersicht =
 
 const sendBrotOrder =
     (email) =>
-        fetch(
+        authFetch(
             apiUrl(
                 EMAIL,
                 SEND,
@@ -1045,7 +1082,7 @@ const sendBrotOrder =
 
 const sendFrischOrder =
     (email) =>
-        fetch(
+        authFetch(
             apiUrl(
                 EMAIL,
                 SEND,
@@ -1062,7 +1099,7 @@ const sendFrischOrder =
 
 const sendBreadOrderWithPersons =
     (email) =>
-        fetch(
+        authFetch(
             apiUrl(
                 EMAIL,
                 SEND,
@@ -1081,7 +1118,7 @@ const sendInventoryStatus = (
     email,
     base64String
 ) =>
-    fetch(
+    authFetch(
         apiUrl(
             EMAIL,
             SEND,
@@ -1102,7 +1139,7 @@ const sendInventoryStatus = (
 // =============================================================================
 
 const getBestellUebersichtPdf = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             DOWNLOAD,
@@ -1112,7 +1149,7 @@ const getBestellUebersichtPdf = () =>
 
 
 const getUebersichtBrotPdf = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             DOWNLOAD,
@@ -1122,7 +1159,7 @@ const getUebersichtBrotPdf = () =>
 
 
 const getUebersichtFrischPdf = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             DOWNLOAD,
@@ -1136,7 +1173,7 @@ const getUebersichtFrischPdf = () =>
 // =============================================================================
 
 const getBestellUebersichtByte = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             BYTE,
@@ -1146,7 +1183,7 @@ const getBestellUebersichtByte = () =>
 
 
 const getUebersichtBrotByte = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             BYTE,
@@ -1156,7 +1193,7 @@ const getUebersichtBrotByte = () =>
 
 
 const getUebersichtFrischByte = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             BYTE,
@@ -1166,7 +1203,7 @@ const getUebersichtFrischByte = () =>
 
 
 const getBreadWithPersonPDFasByte = () =>
-    fetch(
+    authFetch(
         apiUrl(
             PDF,
             BYTE,
@@ -1188,6 +1225,8 @@ const DEFAULT_API = {
     readProdukt,
     deleteProdukt,
     updateProdukt,
+    updateProduktReihenfolge,
+    einlagernProdukt,
 
     // -------------------------------------------------------------------------
     // Kategorie
@@ -1229,6 +1268,7 @@ const DEFAULT_API = {
     createFrischBestand,
     deleteFrischBestand,
     updateFrischBestand,
+    updateFrischBestandReihenfolge,
 
     // -------------------------------------------------------------------------
     // BrotBestand
@@ -1238,6 +1278,7 @@ const DEFAULT_API = {
     createBrotBestand,
     deleteBrotBestand,
     updateBrotBestand,
+    updateBrotBestandReihenfolge,
 
     // -------------------------------------------------------------------------
     // BrotBestellung

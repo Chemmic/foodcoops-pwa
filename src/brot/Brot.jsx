@@ -1,12 +1,9 @@
 import React from "react";
 
 import {
-    Alert,
     Box,
     Button,
     CircularProgress,
-    Collapse,
-    IconButton,
     Paper,
     Stack,
     Typography,
@@ -17,8 +14,6 @@ import {
 import ShoppingCartCheckoutOutlinedIcon
     from "@mui/icons-material/ShoppingCartCheckoutOutlined";
 
-import ExpandMoreOutlinedIcon
-    from "@mui/icons-material/ExpandMoreOutlined";
 
 import {
     toast,
@@ -43,6 +38,20 @@ import {
     useAuth,
 } from "../auth/AuthContext.jsx";
 
+import {
+    eigeneZuerst,
+} from "../bestellung/eigeneBestellung.jsx";
+
+
+const ORDER_HINT =
+    "Deine aktuelle Bestellmenge kannst du ändern, indem du eine neue " +
+    "Menge einträgst und anschließend die Bestellung bestätigst. " +
+    "Mit einer Menge von 0 wird eine bestehende Bestellung gelöscht.";
+
+
+// =============================================================================
+// Collection aus neuem oder altem Backend extrahieren
+// =============================================================================
 
 function extractCollection(
     result,
@@ -71,6 +80,10 @@ function extractCollection(
 }
 
 
+// =============================================================================
+// Brot
+// =============================================================================
+
 export function Brot() {
     const api =
         useApi();
@@ -98,13 +111,6 @@ export function Brot() {
         );
 
 
-    const [
-        mobileInfoOpen,
-        setMobileInfoOpen,
-    ] =
-        React.useState(
-            false
-        );
 
 
     // =========================================================================
@@ -304,13 +310,29 @@ export function Brot() {
                             previousResponse,
                         ] =
                             await Promise.all([
+                                /*
+                                 * Brotbestand
+                                 */
                                 api.readBrotBestand(),
 
+                                /*
+                                 * Eigene aktuelle Bestellung.
+                                 *
+                                 * GET
+                                 * /brotBestellung/current/person/{personId}
+                                 */
                                 api.readBrotBestellungProPerson(
                                     personId
                                 ),
 
-                                api.readBrotBestellungBetweenDatesProPerson(
+                                /*
+                                 * Eigene Bestellung aus der
+                                 * vorherigen Bestellrunde.
+                                 *
+                                 * GET
+                                 * /brotBestellung/previous/person/{personId}
+                                 */
+                                api.readBrotBestellungVorherigeProPerson(
                                     personId
                                 ),
                             ]);
@@ -346,6 +368,10 @@ export function Brot() {
                                 "[Brot] Brotbestand:",
                                 productsResponse.status
                             );
+
+                            setProducts(
+                                []
+                            );
                         }
 
 
@@ -372,11 +398,15 @@ export function Brot() {
                                 "[Brot] Aktuelle Bestellung:",
                                 currentResponse.status
                             );
+
+                            setCurrentOrders(
+                                []
+                            );
                         }
 
 
                         // =====================================================
-                        // Vorwoche
+                        // Vorherige Bestellrunde
                         // =====================================================
 
                         if (
@@ -395,8 +425,12 @@ export function Brot() {
                             );
                         } else {
                             console.error(
-                                "[Brot] Vorwochenbestellung:",
+                                "[Brot] Vorherige Bestellung:",
                                 previousResponse.status
+                            );
+
+                            setPreviousOrders(
+                                []
                             );
                         }
                     } catch (
@@ -510,6 +544,8 @@ export function Brot() {
     const tableData =
         React.useMemo(
             () =>
+                // Schon bestellte Produkte nach oben
+                eigeneZuerst(
                 products.map(
                     product => {
                         const id =
@@ -521,6 +557,10 @@ export function Brot() {
                         return {
                             ...product,
 
+                            /*
+                             * Eigene Bestellung der
+                             * aktuellen Bestellrunde.
+                             */
                             bestellmengeNeu:
                                 Number(
                                     currentOrdersByProduct
@@ -531,6 +571,10 @@ export function Brot() {
                                     0
                                 ),
 
+                            /*
+                             * Eigene Bestellung der
+                             * vorherigen Bestellrunde.
+                             */
                             bestellmengeAlt:
                                 previousOrdersByProduct
                                     .get(
@@ -540,7 +584,7 @@ export function Brot() {
                                 null,
                         };
                     }
-                ),
+                )),
             [
                 products,
                 currentOrdersByProduct,
@@ -666,6 +710,10 @@ export function Brot() {
                                 }
 
 
+                                // =============================================
+                                // Frontend-Zusatzfelder entfernen
+                                // =============================================
+
                                 const {
                                     _links,
                                     bestellmengeNeu,
@@ -674,6 +722,29 @@ export function Brot() {
                                 } =
                                     product;
 
+
+                                // =============================================
+                                // Bestellung erzeugen
+                                // =============================================
+                                //
+                                // WICHTIG:
+                                //
+                                // datum und deadline werden nicht mehr
+                                // vom Frontend festgelegt.
+                                //
+                                // CREATE:
+                                // Backend setzt:
+                                //
+                                //   datum = LocalDateTime.now()
+                                //   deadline = aktuelle Deadline
+                                //
+                                // UPDATE:
+                                // Backend behält:
+                                //
+                                //   altes datum
+                                //   alte deadline
+                                //
+                                // =============================================
 
                                 const order = {
                                     personId,
@@ -688,13 +759,22 @@ export function Brot() {
                                     bestellmenge:
                                         amount,
 
-                                    datum:
-                                        new Date()
-                                            .toISOString(),
+                                    done:
+                                        false,
 
                                     type:
                                         "brot",
                                 };
+
+
+                                console.log(
+                                    "[Brot] Request JSON:",
+                                    JSON.stringify(
+                                        order,
+                                        null,
+                                        2
+                                    )
+                                );
 
 
                                 // =============================================
@@ -727,18 +807,75 @@ export function Brot() {
                         );
 
 
+                // =============================================================
+                // Keine tatsächlichen Änderungen
+                // =============================================================
+
+                if (
+                    calls.length ===
+                    0
+                ) {
+                    toast.info(
+                        "Es waren keine Änderungen zu speichern."
+                    );
+
+                    setAmounts(
+                        {}
+                    );
+
+                    setTotalPrice(
+                        0
+                    );
+
+                    return;
+                }
+
+
+                // =============================================================
+                // Requests
+                // =============================================================
+
                 const responses =
                     await Promise.all(
                         calls
                     );
 
 
-                if (
-                    responses.some(
+                const failedResponses =
+                    responses.filter(
                         response =>
                             !response.ok
-                    )
+                    );
+
+
+                if (
+                    failedResponses.length >
+                    0
                 ) {
+                    for (
+                        const response
+                        of failedResponses
+                    ) {
+                        let text =
+                            "";
+
+                        try {
+                            text =
+                                await response
+                                    .text();
+                        } catch {
+                            // nichts weiter
+                        }
+
+
+                        console.error(
+                            "[Brot] Backendfehler:",
+                            response.status,
+                            text
+                        );
+                    }
+
+
                     toast.error(
                         "Die Brotbestellung konnte nicht vollständig gespeichert werden."
                     );
@@ -746,6 +883,10 @@ export function Brot() {
                     return;
                 }
 
+
+                // =============================================================
+                // Erfolg
+                // =============================================================
 
                 toast.success(
                     "Deine Brotbestellung wurde erfolgreich gespeichert."
@@ -762,11 +903,21 @@ export function Brot() {
                 );
 
 
+                /*
+                 * Danach:
+                 *
+                 * - Brotbestand
+                 * - aktuelle Bestellung
+                 * - vorherige Bestellung
+                 *
+                 * erneut laden.
+                 */
                 refresh();
             } catch (
                 error
             ) {
                 console.error(
+                    "[Brot] Fehler beim Speichern:",
                     error
                 );
 
@@ -835,150 +986,13 @@ export function Brot() {
                             0,
                     }}
                 >
-                    <DeadlineLogic />
-                </Box>
-
-
-                {/* ========================================================= */}
-                {/* Info                                                      */}
-                {/* ========================================================= */}
-
-                {isSmallScreen ? (
-                    <Alert
-                        severity="info"
-                        sx={{
-                            flexShrink:
-                                0,
-
-                            py:
-                                0,
-
-                            "& .MuiAlert-icon": {
-                                py:
-                                    0.75,
-
-                                mr:
-                                    1,
-                            },
-
-                            "& .MuiAlert-message": {
-                                width:
-                                    "100%",
-
-                                minWidth:
-                                    0,
-
-                                py:
-                                    0.75,
-                            },
-
-                            "& .MuiAlert-action": {
-                                alignItems:
-                                    "flex-start",
-
-                                pt:
-                                    0.25,
-
-                                pb:
-                                    0.25,
-
-                                pr:
-                                    0.5,
-                            },
-                        }}
-                        action={
-                            <IconButton
-                                size="small"
-                                color="inherit"
-                                aria-label={
-                                    mobileInfoOpen
-                                        ? "Hinweis einklappen"
-                                        : "Hinweis ausklappen"
-                                }
-                                aria-expanded={
-                                    mobileInfoOpen
-                                }
-                                onClick={
-                                    () =>
-                                        setMobileInfoOpen(
-                                            value =>
-                                                !value
-                                        )
-                                }
-                            >
-                                <ExpandMoreOutlinedIcon
-                                    sx={{
-                                        transition:
-                                            theme.transitions
-                                                .create(
-                                                    "transform",
-                                                    {
-                                                        duration:
-                                                            theme
-                                                                .transitions
-                                                                .duration
-                                                                .shortest,
-                                                    }
-                                                ),
-
-                                        transform:
-                                            mobileInfoOpen
-                                                ? "rotate(180deg)"
-                                                : "rotate(0deg)",
-                                    }}
-                                />
-                            </IconButton>
+                    <DeadlineLogic
+                        compact
+                        info={
+                            ORDER_HINT
                         }
-                    >
-                        <Typography
-                            variant="body2"
-                            fontWeight={
-                                600
-                            }
-                        >
-                            Hinweis zur Bestellung
-                        </Typography>
-
-
-                        <Collapse
-                            in={
-                                mobileInfoOpen
-                            }
-                            timeout="auto"
-                            unmountOnExit
-                        >
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    pt:
-                                        0.75,
-
-                                    pr:
-                                        0.5,
-                                }}
-                            >
-                                Deine aktuelle Bestellmenge kannst du ändern,
-                                indem du eine neue Menge einträgst und
-                                anschließend die Bestellung bestätigst.
-                                Mit einer Menge von 0 wird eine bestehende
-                                Bestellung gelöscht.
-                            </Typography>
-                        </Collapse>
-                    </Alert>
-                ) : (
-                    <Alert
-                        severity="info"
-                        sx={{
-                            flexShrink:
-                                0,
-                        }}
-                    >
-                        Deine aktuelle Bestellmenge kannst du ändern,
-                        indem du eine neue Menge einträgst und anschließend
-                        die Bestellung bestätigst. Mit einer Menge von 0
-                        wird eine bestehende Bestellung gelöscht.
-                    </Alert>
-                )}
+                    />
+                </Box>
 
 
                 {/* ========================================================= */}
@@ -1087,20 +1101,18 @@ export function Brot() {
                             sm:
                                 1.5,
                         }}
-                        alignItems="flex-start"
+                        sx={{ alignItems: "flex-start" }}
                     >
                         <Stack
                             direction="row"
                             spacing={
                                 2
                             }
-                            alignItems="baseline"
+                            sx={{ alignItems: "baseline" }}
                         >
                             <Typography
                                 variant="h6"
-                                fontWeight={
-                                    700
-                                }
+                                sx={{ fontWeight: 700 }}
                             >
                                 Preis
                             </Typography>
@@ -1108,10 +1120,8 @@ export function Brot() {
 
                             <Typography
                                 variant="h5"
-                                fontWeight={
-                                    700
-                                }
                                 sx={{
+                                    fontWeight: 700,
                                     fontVariantNumeric:
                                         "tabular-nums",
                                 }}

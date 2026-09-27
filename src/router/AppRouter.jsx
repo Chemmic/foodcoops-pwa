@@ -61,6 +61,12 @@ import SettingsOutlinedIcon
 import InfoOutlinedIcon
     from "@mui/icons-material/InfoOutlined";
 
+import AdminPanelSettingsOutlinedIcon
+    from "@mui/icons-material/AdminPanelSettingsOutlined";
+
+import FactCheckOutlinedIcon
+    from "@mui/icons-material/FactCheckOutlined";
+
 import ZoomInOutlinedIcon
     from "@mui/icons-material/ZoomInOutlined";
 
@@ -74,14 +80,6 @@ import {
 import {
     MainBestellung,
 } from "../bestellung/MainBestellung.jsx";
-
-import {
-    Bestellung,
-} from "../bestellung/Bestellung.jsx";
-
-import {
-    Brot,
-} from "../brot/Brot.jsx";
 
 import {
     MainEinkauf,
@@ -111,7 +109,43 @@ import {
     useAuth,
 } from "../auth/AuthContext.jsx";
 
+import {
+    ADMIN_ROLE,
+    ORGANISATOR_ROLE,
+} from "../auth/roles.js";
+
+import {
+    Organisation,
+} from "../organisation/Organisation.jsx";
+
+import {
+    Verwaltung,
+} from "../verwaltung/Verwaltung.jsx";
+
+import {
+    PFADE,
+    istAktiv,
+    neuerPfad,
+} from "./pfade.js";
+
 import "./AppRouter.css";
+
+
+/** Alte URLs (z.B. /mainAdmin/...) umleiten, alles andere zum Start. */
+function AlteUrlWeiterleitung() {
+    const location =
+        useLocation();
+
+    return (
+        <Navigate
+            to={
+                neuerPfad(location.pathname) ??
+                PFADE.start
+            }
+            replace
+        />
+    );
+}
 
 
 const DRAWER_WIDTH = 270;
@@ -153,7 +187,19 @@ const AppContent = () => {
     const {
         keycloak,
         authenticated,
+        hasRole,
     } = useAuth();
+
+    const isAdmin =
+        hasRole(
+            ADMIN_ROLE
+        );
+
+    const isOrganisator =
+        isAdmin ||
+        hasRole(
+            ORGANISATOR_ROLE
+        );
 
 
     const [
@@ -187,12 +233,8 @@ const AppContent = () => {
      * Die Tabellen scrollen dann intern.
      */
     const fixedViewportLayout =
-        location.pathname.startsWith(
-            "/mainBestellung"
-        ) ||
-        location.pathname.startsWith(
-            "/mainManagement"
-        );
+        istAktiv(location.pathname, PFADE.bestellung) ||
+        istAktiv(location.pathname, PFADE.produkte);
 
 
     // =========================================================================
@@ -284,7 +326,7 @@ const AppContent = () => {
                         "Home",
 
                     path:
-                        "/home",
+                        PFADE.start,
 
                     icon:
                         <HomeOutlinedIcon />,
@@ -294,7 +336,7 @@ const AppContent = () => {
                     "Mein Profil",
 
                 path:
-                    "/profil",
+                    PFADE.profil,
 
                 icon:
                     <AccountCircleOutlinedIcon />,
@@ -304,7 +346,7 @@ const AppContent = () => {
                         "Bestellung",
 
                     path:
-                        "/mainBestellung",
+                        PFADE.bestellung,
 
                     icon:
                         <AddShoppingCartOutlinedIcon />,
@@ -314,7 +356,7 @@ const AppContent = () => {
                         "Einkauf",
 
                     path:
-                        "/mainEinkauf",
+                        PFADE.einkauf,
 
                     icon:
                         <ShoppingCartOutlinedIcon />,
@@ -324,7 +366,7 @@ const AppContent = () => {
                         "Produkt-Management",
 
                     path:
-                        "/mainManagement",
+                        PFADE.produkte,
 
                     icon:
                         <Inventory2OutlinedIcon />,
@@ -334,13 +376,44 @@ const AppContent = () => {
                         "Konfiguration",
 
                     path:
-                        "/mainAdmin",
+                        PFADE.konfiguration,
 
                     icon:
                         <SettingsOutlinedIcon />,
                 },
+                ...(isOrganisator
+                    ? [
+                        {
+                            label:
+                                "Organisation",
+
+                            path:
+                                PFADE.organisation,
+
+                            icon:
+                                <FactCheckOutlinedIcon />,
+                        },
+                    ]
+                    : []),
+                ...(isAdmin
+                    ? [
+                        {
+                            label:
+                                "Verwaltung",
+
+                            path:
+                                PFADE.verwaltung,
+
+                            icon:
+                                <AdminPanelSettingsOutlinedIcon />,
+                        },
+                    ]
+                    : []),
             ],
-            []
+            [
+                isAdmin,
+                isOrganisator,
+            ]
         );
 
 
@@ -352,7 +425,7 @@ const AppContent = () => {
                         "Impressum",
 
                     path:
-                        "/about",
+                        PFADE.impressum,
 
                     icon:
                         <InfoOutlinedIcon />,
@@ -372,51 +445,53 @@ const AppContent = () => {
 
 
         if (
-            currentRoute.startsWith(
-                "/mainBestellung"
-            )
+            istAktiv(currentRoute, PFADE.bestellung)
         ) {
             return "Bestellung";
         }
 if (
-            currentRoute.startsWith(
-                "/profil"
-            )
+            istAktiv(currentRoute, PFADE.profil)
         ) {
             return "Mein Profil";
         }
 
         if (
-            currentRoute.startsWith(
-                "/mainEinkauf"
-            )
+            istAktiv(currentRoute, PFADE.einkauf)
         ) {
             return "Einkauf";
         }
 
 
         if (
-            currentRoute.startsWith(
-                "/mainManagement"
-            )
+            istAktiv(currentRoute, PFADE.produkte)
         ) {
             return "Produkt-Management";
         }
 
 
         if (
-            currentRoute.startsWith(
-                "/mainAdmin"
-            )
+            istAktiv(currentRoute, PFADE.konfiguration)
         ) {
             return "Konfiguration";
         }
 
 
         if (
-            currentRoute.startsWith(
-                "/about"
-            )
+            istAktiv(currentRoute, PFADE.verwaltung)
+        ) {
+            return "Verwaltung";
+        }
+
+
+        if (
+            istAktiv(currentRoute, PFADE.organisation)
+        ) {
+            return "Organisation";
+        }
+
+
+        if (
+            istAktiv(currentRoute, PFADE.impressum)
         ) {
             return "Impressum";
         }
@@ -432,24 +507,11 @@ if (
 
     const isRouteActive = (
         path
-    ) => {
-        if (
-            path === "/home"
-        ) {
-            return (
-                location.pathname ===
-                    "/" ||
-                location.pathname ===
-                    "/home"
-            );
-        }
-
-
-        return location.pathname
-            .startsWith(
-                path
-            );
-    };
+    ) =>
+        istAktiv(
+            location.pathname,
+            path
+        );
 
 
     // =========================================================================
@@ -559,14 +621,18 @@ if (
                         primary={
                             item.label
                         }
-                        primaryTypographyProps={{
-                            fontSize:
-                                "0.9375rem",
+                        slotProps={{
+                            primary: {
+                                sx: {
+                                    fontSize:
+                                        "0.9375rem",
 
-                            fontWeight:
-                                active
-                                    ? 650
-                                    : 500,
+                                    fontWeight:
+                                        active
+                                            ? 650
+                                            : 500,
+                                },
+                            },
                         }}
                     />
                 </ListItemButton>
@@ -595,7 +661,7 @@ if (
                 component={
                     Link
                 }
-                to="/home"
+                to={PFADE.start}
                 sx={{
                     minHeight:
                         76,
@@ -756,8 +822,8 @@ if (
                         spacing={
                             1.5
                         }
-                        alignItems="center"
                         sx={{
+                            alignItems: "center",
                             mb:
                                 2,
 
@@ -845,7 +911,11 @@ if (
 
     return (
         <Box
-            className="AppShell"
+            className={
+                fixedViewportLayout
+                    ? "AppShell AppShell--fixed"
+                    : "AppShell"
+            }
             sx={{
                 minHeight:
                     "100vh",
@@ -959,7 +1029,7 @@ if (
                         spacing={
                             0.5
                         }
-                        alignItems="center"
+                        sx={{ alignItems: "center" }}
                     >
                         <Tooltip
                             title={
@@ -1211,23 +1281,17 @@ if (
                         />
 
                         <Route
-                            path="/profil"
+                            path={PFADE.profil}
                             element={
                                 <PrivateRoute>
                                     <Profil />
                                 </PrivateRoute>
                             }
                         />
-                        <Route
-                            path="/home"
-                            element={
-                                <Home />
-                            }
-                        />
 
 
                         <Route
-                            path="/about"
+                            path={PFADE.impressum}
                             element={
                                 <About />
                             }
@@ -1235,7 +1299,7 @@ if (
 
 
                         <Route
-                            path="/login"
+                            path={PFADE.anmelden}
                             element={
                                 <AuthButton
                                     fullWidth
@@ -1252,7 +1316,7 @@ if (
                         {/* ================================================= */}
 
                         <Route
-                            path="/mainBestellung"
+                            path={`${PFADE.bestellung}/*`}
                             element={
                                 <PrivateRoute
                                     roles={[
@@ -1262,33 +1326,7 @@ if (
                                     <MainBestellung />
                                 </PrivateRoute>
                             }
-                        >
-                            <Route
-                                index
-                                element={
-                                    <Navigate
-                                        to="bestellung"
-                                        replace
-                                    />
-                                }
-                            />
-
-
-                            <Route
-                                path="bestellung"
-                                element={
-                                    <Bestellung />
-                                }
-                            />
-
-
-                            <Route
-                                path="brotbestellung"
-                                element={
-                                    <Brot />
-                                }
-                            />
-                        </Route>
+                        />
 
 
                         {/* ================================================= */}
@@ -1296,7 +1334,7 @@ if (
                         {/* ================================================= */}
 
                         <Route
-                            path="/mainEinkauf/*"
+                            path={`${PFADE.einkauf}/*`}
                             element={
                                 <PrivateRoute
                                     roles={[
@@ -1318,7 +1356,7 @@ if (
                         {/* ================================================= */}
 
                         <Route
-                            path="/mainManagement/*"
+                            path={`${PFADE.produkte}/*`}
                             element={
                                 <PrivateRoute
                                     roles={[
@@ -1336,11 +1374,12 @@ if (
                         {/* ================================================= */}
 
                         <Route
-                            path="/mainAdmin/*"
+                            path={`${PFADE.konfiguration}/*`}
                             element={
                                 <PrivateRoute
                                     roles={[
                                         "Einkäufer",
+                                        ADMIN_ROLE,
                                     ]}
                                 >
                                     <MainAdmin />
@@ -1349,13 +1388,47 @@ if (
                         />
 
 
+                        {/* ================================================= */}
+                        {/* Organisation (Organisator / Admin)               */}
+                        {/* ================================================= */}
+
+                        <Route
+                            path={`${PFADE.organisation}/*`}
+                            element={
+                                <PrivateRoute
+                                    roles={[
+                                        ORGANISATOR_ROLE,
+                                        ADMIN_ROLE,
+                                    ]}
+                                >
+                                    <Organisation />
+                                </PrivateRoute>
+                            }
+                        />
+
+
+                        {/* ================================================= */}
+                        {/* Verwaltung (nur Admins)                          */}
+                        {/* ================================================= */}
+
+                        <Route
+                            path={`${PFADE.verwaltung}/*`}
+                            element={
+                                <PrivateRoute
+                                    roles={[
+                                        ADMIN_ROLE,
+                                    ]}
+                                >
+                                    <Verwaltung />
+                                </PrivateRoute>
+                            }
+                        />
+
+
                         <Route
                             path="*"
                             element={
-                                <Navigate
-                                    to="/home"
-                                    replace
-                                />
+                                <AlteUrlWeiterleitung />
                             }
                         />
                     </Routes>

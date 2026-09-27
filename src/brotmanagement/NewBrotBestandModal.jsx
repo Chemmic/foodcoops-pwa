@@ -12,6 +12,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 
 import { BrotBestandModal } from "./BrotBestandModal.jsx";
+import {
+    PlatzFeld,
+    platzAusEingabe,
+} from "../components/reihenfolge/PlatzFeld.jsx";
 
 
 export function NewBrotBestandModal(props) {
@@ -29,6 +33,10 @@ export function NewBrotBestandModal(props) {
         setVerfuegbarkeit,
     ] = React.useState(true);
 
+    // Platz in der Liste (1 = oben); leer = ans Ende
+    const [platz, setPlatz] =
+        React.useState("");
+
 
     React.useEffect(() => {
         if (props.show) {
@@ -36,6 +44,7 @@ export function NewBrotBestandModal(props) {
             setGewicht(0);
             setPreis(0);
             setVerfuegbarkeit(true);
+            setPlatz("");
         }
     }, [props.show]);
 
@@ -65,6 +74,8 @@ export function NewBrotBestandModal(props) {
             preis:
                 Number(preis) || 0,
             verfuegbarkeit,
+            sortierung:
+                platzAusEingabe(platz),
         });
 
         close();
@@ -136,6 +147,12 @@ export function NewBrotBestandModal(props) {
                     />
                 }
                 label="Produkt verfügbar"
+            />
+
+            <PlatzFeld
+                value={platz}
+                onChange={setPlatz}
+                anzahl={props.anzahl ?? 0}
             />
         </Stack>
     );

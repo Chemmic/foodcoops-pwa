@@ -11,6 +11,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 
 import { LagerModal } from "./LagerModal.jsx";
+import {
+    PlatzFeld,
+    platzAusEingabe,
+} from "../components/reihenfolge/PlatzFeld.jsx";
 import { deepAssign } from "../util";
 
 
@@ -126,10 +130,15 @@ export function NewProduktModal(props) {
         columns = [],
         kategorien = [],
         einheiten = [],
+        anzahl = 0,
     } = props;
 
     const [newData, setNewData] =
         React.useState({});
+
+    // Platz in der Liste (1 = oben); leer = ans Ende
+    const [platz, setPlatz] =
+        React.useState("");
 
 
     const initial = React.useMemo(
@@ -144,6 +153,7 @@ export function NewProduktModal(props) {
     const close = () => {
         props.close();
         setNewData({});
+        setPlatz("");
     };
 
 
@@ -195,7 +205,9 @@ export function NewProduktModal(props) {
                 accessor ===
                     "lagerbestand.einheit.name" ||
                 accessor ===
-                    "kategorie.name"
+                    "kategorie.name" ||
+                accessor ===
+                    "sortierung"
             ) {
                 continue;
             }
@@ -244,6 +256,10 @@ export function NewProduktModal(props) {
                     kategorien[0].name,
             };
         }
+
+
+        result.sortierung =
+            platzAusEingabe(platz);
 
 
         props.create(result);
@@ -410,7 +426,9 @@ export function NewProduktModal(props) {
                 .filter(
                     ([accessor]) =>
                         accessor !==
-                        "kategorie.id"
+                        "kategorie.id" &&
+                        accessor !==
+                        "sortierung"
                 )
                 .map(
                     ([
@@ -422,6 +440,12 @@ export function NewProduktModal(props) {
                             field
                         )
                 )}
+
+            <PlatzFeld
+                value={platz}
+                onChange={setPlatz}
+                anzahl={anzahl}
+            />
         </Stack>
     );
 

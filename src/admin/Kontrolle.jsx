@@ -692,9 +692,7 @@ export function Kontrolle() {
                                             >
                                                 <TableCell>
                                                     <Typography
-                                                        fontWeight={
-                                                            700
-                                                        }
+                                                        sx={{ fontWeight: 700 }}
                                                     >
                                                         Gesamt
                                                         Kategorie{" "}
@@ -708,9 +706,7 @@ export function Kontrolle() {
 
                                                 <TableCell>
                                                     <Typography
-                                                        fontWeight={
-                                                            700
-                                                        }
+                                                        sx={{ fontWeight: 700 }}
                                                     >
                                                         <NumberFormatComponent
                                                             value={

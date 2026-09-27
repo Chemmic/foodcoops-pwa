@@ -41,7 +41,7 @@ function HelpTooltip({
                 >
                     <Typography
                         variant="subtitle2"
-                        fontWeight={700}
+                        sx={{ fontWeight: 700 }}
                         gutterBottom
                     >
                         {title}
@@ -426,16 +426,14 @@ export function AdminConfig() {
                     <Box>
                         <Stack
                             direction="row"
-                            alignItems="center"
                             spacing={0.5}
                             sx={{
+                                alignItems: "center",
                                 mb: 1,
                             }}
                         >
                             <Typography
-                                fontWeight={
-                                    600
-                                }
+                                sx={{ fontWeight: 600 }}
                             >
                                 Einkauf
                             </Typography>
@@ -492,16 +490,14 @@ export function AdminConfig() {
                     <Box>
                         <Stack
                             direction="row"
-                            alignItems="center"
                             spacing={0.5}
                             sx={{
+                                alignItems: "center",
                                 mb: 1,
                             }}
                         >
                             <Typography
-                                fontWeight={
-                                    600
-                                }
+                                sx={{ fontWeight: 600 }}
                             >
                                 Einkaufsmanagement
                             </Typography>
@@ -513,12 +509,26 @@ export function AdminConfig() {
                                 einem Einkauf
                                 an das
                                 Einkaufsmanagement
-                                geschickt.
+                                geschickt.{" "}
+                                <strong>
+                                    %kostenUebersicht%
+                                </strong>{" "}
+                                fügt eine
+                                Aufstellung
+                                (Frisch, Brot,
+                                Lager, Zu viel,
+                                Lieferkosten,
+                                Gesamt) ein.
+                                Weitere
                                 Platzhalter
                                 sind unter
                                 anderem{" "}
                                 <strong>
                                     %personID%
+                                </strong>
+                                ,{" "}
+                                <strong>
+                                    %ShopperPersonID%
                                 </strong>
                                 ,{" "}
                                 <strong>
@@ -569,16 +579,14 @@ export function AdminConfig() {
                     <Box>
                         <Stack
                             direction="row"
-                            alignItems="center"
                             spacing={0.5}
                             sx={{
+                                alignItems: "center",
                                 mb: 1,
                             }}
                         >
                             <Typography
-                                fontWeight={
-                                    600
-                                }
+                                sx={{ fontWeight: 600 }}
                             >
                                 Lagermeister
                             </Typography>

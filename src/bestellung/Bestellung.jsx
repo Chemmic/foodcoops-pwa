@@ -1,12 +1,9 @@
 import React from "react";
 
 import {
-    Alert,
     Box,
     Button,
     CircularProgress,
-    Collapse,
-    IconButton,
     Paper,
     Stack,
     Typography,
@@ -17,8 +14,6 @@ import {
 import ShoppingCartCheckoutOutlinedIcon
     from "@mui/icons-material/ShoppingCartCheckoutOutlined";
 
-import ExpandMoreOutlinedIcon
-    from "@mui/icons-material/ExpandMoreOutlined";
 
 import {
     toast,
@@ -42,6 +37,16 @@ import NumberFormatComponent
 import {
     useAuth,
 } from "../auth/AuthContext.jsx";
+
+import {
+    eigeneZuerst,
+} from "./eigeneBestellung.jsx";
+
+
+const ORDER_HINT =
+    "Deine aktuelle Bestellmenge kannst du ändern, indem du eine neue " +
+    "Menge einträgst und anschließend die Bestellung bestätigst. " +
+    "Mit einer Menge von 0 wird eine bestehende Bestellung gelöscht.";
 
 
 // =============================================================================
@@ -160,11 +165,6 @@ export function Bestellung() {
             theme.breakpoints.down("sm")
         );
 
-    const [
-        mobileInfoOpen,
-        setMobileInfoOpen,
-    ] =
-        React.useState(false);
 
 
     // =========================================================================
@@ -708,6 +708,8 @@ export function Bestellung() {
     const tableData =
         React.useMemo(
             () =>
+                // Schon bestellte Produkte nach oben
+                eigeneZuerst(
                 products.map(
                     product => {
                         const id =
@@ -752,7 +754,7 @@ export function Bestellung() {
                                 null,
                         };
                     }
-                ),
+                )),
             [
                 products,
                 totalsByProduct,
@@ -1111,126 +1113,13 @@ export function Bestellung() {
                         flexShrink: 0,
                     }}
                 >
-                    <DeadlineLogic />
-                </Box>
-
-
-                {/* ========================================================= */}
-                {/* Info                                                      */}
-                {/* ========================================================= */}
-
-                {isSmallScreen ? (
-                    <Alert
-                        severity="info"
-                        sx={{
-                            flexShrink: 0,
-
-                            py: 0,
-
-                            "& .MuiAlert-icon": {
-                                py: 0.75,
-                                mr: 1,
-                            },
-
-                            "& .MuiAlert-message": {
-                                width: "100%",
-                                minWidth: 0,
-                                py: 0.75,
-                            },
-
-                            "& .MuiAlert-action": {
-                                alignItems: "flex-start",
-                                pt: 0.25,
-                                pb: 0.25,
-                                pr: 0.5,
-                            },
-                        }}
-                        action={
-                            <IconButton
-                                size="small"
-                                color="inherit"
-                                aria-label={
-                                    mobileInfoOpen
-                                        ? "Hinweis einklappen"
-                                        : "Hinweis ausklappen"
-                                }
-                                aria-expanded={
-                                    mobileInfoOpen
-                                }
-                                onClick={
-                                    () =>
-                                        setMobileInfoOpen(
-                                            value =>
-                                                !value
-                                        )
-                                }
-                            >
-                                <ExpandMoreOutlinedIcon
-                                    sx={{
-                                        transition:
-                                            theme.transitions
-                                                .create(
-                                                    "transform",
-                                                    {
-                                                        duration:
-                                                            theme
-                                                                .transitions
-                                                                .duration
-                                                                .shortest,
-                                                    }
-                                                ),
-
-                                        transform:
-                                            mobileInfoOpen
-                                                ? "rotate(180deg)"
-                                                : "rotate(0deg)",
-                                    }}
-                                />
-                            </IconButton>
+                    <DeadlineLogic
+                        compact
+                        info={
+                            ORDER_HINT
                         }
-                    >
-                        <Typography
-                            variant="body2"
-                            fontWeight={600}
-                        >
-                            Hinweis zur Bestellung
-                        </Typography>
-
-                        <Collapse
-                            in={
-                                mobileInfoOpen
-                            }
-                            timeout="auto"
-                            unmountOnExit
-                        >
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    pt: 0.75,
-                                    pr: 0.5,
-                                }}
-                            >
-                                Deine aktuelle Bestellmenge kannst du ändern,
-                                indem du eine neue Menge einträgst und
-                                anschließend die Bestellung bestätigst.
-                                Mit einer Menge von 0 wird eine bestehende
-                                Bestellung gelöscht.
-                            </Typography>
-                        </Collapse>
-                    </Alert>
-                ) : (
-                    <Alert
-                        severity="info"
-                        sx={{
-                            flexShrink: 0,
-                        }}
-                    >
-                        Deine aktuelle Bestellmenge kannst du ändern,
-                        indem du eine neue Menge einträgst und anschließend
-                        die Bestellung bestätigst. Mit einer Menge von 0
-                        wird eine bestehende Bestellung gelöscht.
-                    </Alert>
-                )}
+                    />
+                </Box>
 
 
                 {/* ========================================================= */}
@@ -1310,24 +1199,24 @@ export function Bestellung() {
                             xs: 1,
                             sm: 1.5,
                         }}
-                        alignItems="flex-start"
+                        sx={{ alignItems: "flex-start" }}
                     >
                         <Stack
                             direction="row"
                             spacing={2}
-                            alignItems="baseline"
+                            sx={{ alignItems: "baseline" }}
                         >
                             <Typography
                                 variant="h6"
-                                fontWeight={700}
+                                sx={{ fontWeight: 700 }}
                             >
                                 Preis
                             </Typography>
 
                             <Typography
                                 variant="h5"
-                                fontWeight={700}
                                 sx={{
+                                    fontWeight: 700,
                                     fontVariantNumeric:
                                         "tabular-nums",
                                 }}

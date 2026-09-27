@@ -82,7 +82,7 @@ export function EditKategorieModal(
     const title = (
         <Stack
             direction="row"
-            alignItems="center"
+            sx={{ alignItems: "center" }}
             spacing={0.5}
         >
             <span>
@@ -96,7 +96,7 @@ export function EditKategorieModal(
                     <Box>
                         <Typography
                             variant="subtitle2"
-                            fontWeight={700}
+                            sx={{ fontWeight: 700 }}
                             gutterBottom
                         >
                             Mischbare Kategorien
@@ -148,7 +148,7 @@ export function EditKategorieModal(
             <Box>
                 <Typography
                     variant="subtitle1"
-                    fontWeight={700}
+                    sx={{ fontWeight: 700 }}
                     gutterBottom
                 >
                     Neue Kategorie
@@ -160,9 +160,11 @@ export function EditKategorieModal(
                         sm: "row",
                     }}
                     spacing={2}
-                    alignItems={{
-                        xs: "stretch",
-                        sm: "center",
+                    sx={{
+                        alignItems: {
+                            xs: "stretch",
+                            sm: "center",
+                        },
                     }}
                 >
                     <TextField
@@ -222,7 +224,7 @@ export function EditKategorieModal(
             <Box>
                 <Typography
                     variant="subtitle1"
-                    fontWeight={700}
+                    sx={{ fontWeight: 700 }}
                     gutterBottom
                 >
                     Bestehende Kategorien

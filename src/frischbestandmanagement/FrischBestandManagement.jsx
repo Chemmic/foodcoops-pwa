@@ -18,6 +18,9 @@ import CategoryOutlinedIcon
 import StraightenOutlinedIcon
     from "@mui/icons-material/StraightenOutlined";
 
+import SwapVertOutlinedIcon
+    from "@mui/icons-material/SwapVertOutlined";
+
 import {
     toast,
 } from "react-toastify";
@@ -51,6 +54,10 @@ import {
     EditEinheitenModal,
 } from "../lager/EditEinheitenModal.jsx";
 
+import {
+    ReihenfolgeDialog,
+} from "../components/reihenfolge/ReihenfolgeDialog.jsx";
+
 import NumberFormatComponent
     from "../logic/NumberFormatComponent.jsx";
 
@@ -63,6 +70,15 @@ export function FrischBestandManagement() {
     const columns =
         React.useMemo(
             () => [
+                {
+                    // Platz in der Liste (wie beim Händler)
+                    header:
+                        "Nr.",
+
+                    accessorKey:
+                        "sortierung",
+                },
+
                 {
                     header:
                         "Produkt",
@@ -422,6 +438,46 @@ export function FrischBestandManagement() {
 
 
     // =========================================================================
+    // Reihenfolge
+    // =========================================================================
+
+    const saveReihenfolge =
+        async ids => {
+            try {
+                const response =
+                    await api.updateFrischBestandReihenfolge(
+                        ids
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+                setData(
+                    await response.json()
+                );
+
+                dispatchModal(null);
+
+                toast.success(
+                    "Die Reihenfolge wurde gespeichert."
+                );
+            } catch (error) {
+                console.error(
+                    "Fehler beim Speichern der Reihenfolge:",
+                    error
+                );
+
+                toast.error(
+                    "Die Reihenfolge konnte nicht gespeichert werden."
+                );
+            }
+        };
+
+
+    // =========================================================================
     // Frischprodukt aktualisieren
     // =========================================================================
 
@@ -602,16 +658,10 @@ export function FrischBestandManagement() {
                 }
 
 
-                const created =
-                    await response.json();
+                await response.json();
 
-
-                setData(
-                    previous => [
-                        ...previous,
-                        created,
-                    ]
-                );
+                // Neu laden: nachfolgende Produkte rutschen einen Platz nach unten
+                refresh();
 
 
                 toast.success(
@@ -999,7 +1049,7 @@ export function FrischBestandManagement() {
                                 "repeat(2, minmax(0, 1fr))",
 
                             sm:
-                                "repeat(3, auto)",
+                                "repeat(4, auto)",
                         },
 
                         gap:
@@ -1152,6 +1202,41 @@ export function FrischBestandManagement() {
                         }}
                     >
                         Einheiten
+                    </Button>
+
+
+                    <Button
+                        variant="outlined"
+                        startIcon={
+                            <SwapVertOutlinedIcon />
+                        }
+                        disabled={
+                            data.length < 2
+                        }
+                        onClick={() =>
+                            dispatchModal(
+                                "ReihenfolgeDialog"
+                            )
+                        }
+                        sx={{
+                            gridColumn: {
+                                xs:
+                                    "1 / -1",
+
+                                sm:
+                                    "auto",
+                            },
+
+                            gridRow: {
+                                xs:
+                                    "3",
+
+                                sm:
+                                    "auto",
+                            },
+                        }}
+                    >
+                        Reihenfolge
                     </Button>
                 </Box>
             </Paper>
@@ -1307,6 +1392,30 @@ export function FrischBestandManagement() {
                 }
                 kategorien={
                     kategorien
+                }
+                anzahl={
+                    data.length
+                }
+            />
+
+
+            <ReihenfolgeDialog
+                titel="Reihenfolge der Frischwaren"
+                beschreibung="So erscheinen die Produkte bei der Bestellung, beim Einkauf und im PDF – am besten wie in der Frischwaren-Liste des Händlers. Ziehe ein Produkt am Griff oder tippe den gewünschten Platz ein."
+                offen={
+                    modal.type ===
+                    "ReihenfolgeDialog"
+                }
+                produkte={
+                    data
+                }
+                onClose={() =>
+                    dispatchModal(
+                        null
+                    )
+                }
+                onSpeichern={
+                    saveReihenfolge
                 }
             />
 
